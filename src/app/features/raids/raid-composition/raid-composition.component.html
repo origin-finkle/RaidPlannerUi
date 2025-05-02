@@ -1,0 +1,206 @@
+<!-- GROUPES EN COLONNE, CENTRÉS -->
+<div style="display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;">
+  <!-- Groupe 1 -->
+  <div style="width: 260px; background: #222; padding: 14px; border-radius: 12px;">
+    <h3 style="color: white; margin-bottom: 10px;">Groupe 1 ({{ group1.length }}/5)</h3>
+    <div #group1Container style="display: flex; flex-direction: column; gap: 10px; min-height: 240px;">
+      <div
+        *ngFor="let p of group1; trackBy: trackByNom"
+        [attr.data-nom]="p.nom"
+        [attr.data-classe]="p.classe"
+        [style.backgroundColor]="getClasseColorHex(p.classe)"
+        [style.color]="getClasseTextColor(p.classe)"
+        style="width: 100%; height: 80px; background: lightgray; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;"
+      >
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <img *ngIf="getSpecIcon(p.specialisation, p.classe)"
+               [src]="getSpecIcon(p.specialisation, p.classe)"
+               alt="{{ p.specialisation }}"
+               style="width: 18px; height: 18px;" />
+          <span>{{ p.nom }}</span>
+          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">
+           R
+        </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Groupe 2 -->
+  <div style="width: 260px; background: #222; padding: 14px; border-radius: 12px;">
+    <h3 style="color: white; margin-bottom: 10px;">Groupe 2 ({{ group2.length }}/5)</h3>
+    <div #group2Container style="display: flex; flex-direction: column; gap: 10px; min-height: 240px;">
+      <div
+        *ngFor="let p of group2; trackBy: trackByNom"
+        [attr.data-nom]="p.nom"
+        [attr.data-classe]="p.classe"
+        [style.backgroundColor]="getClasseColorHex(p.classe)"
+        [style.color]="getClasseTextColor(p.classe)"
+        style="width: 100%; height: 80px; background: lightgray; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;"
+      >
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <img *ngIf="getSpecIcon(p.specialisation, p.classe)"
+               [src]="getSpecIcon(p.specialisation, p.classe)"
+               alt="{{ p.specialisation }}"
+               style="width: 18px; height: 18px;" />
+          <span>{{ p.nom }}</span>
+          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">
+           R
+        </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-right mb-4">
+  <button (click)="exportRaidHelperFormat(true)"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded">
+    📤 Envoyer au back & Discord
+  </button>
+</div>
+
+<div style="background: #111; padding: 16px; border-radius: 8px;">
+  <h3 style="color: white;">Personnages disponibles</h3>
+
+  <!-- TANKS -->
+  <div style="margin-bottom: 16px;">
+    <h4 style="color: skyblue;">🛡️ Tanks</h4>
+    <div #tankContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+      <div
+        *ngFor="let p of availableTanks; trackBy: trackByNom"
+        [attr.data-nom]="p.nom"
+        [attr.data-classe]="p.classe"
+        [style.backgroundColor]="getClasseColorHex(p.classe)"
+        [style.color]="getClasseTextColor(p.classe)"
+        style="width: 150px; height: 60px; background: lightgray; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+      >
+        <img *ngIf="getSpecIcon(p.specialisation, p.classe)"
+             [src]="getSpecIcon(p.specialisation, p.classe)"
+             alt="{{ p.specialisation }}"
+             style="width: 16px; height: 16px;" />
+        <span>{{ p.nom }}</span>
+        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">
+           R
+        </span>
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'"
+          class="status-dot yellow"
+          title="Participation : Tentative"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'"
+          class="status-dot orange"
+          title="Participation : Bench"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'"
+          class="status-dot red"
+          title="Participation : En retard (Late)"
+        ></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DPS -->
+  <div style="margin-bottom: 16px;">
+    <h4 style="color: lightcoral;">⚔️ DPS</h4>
+    <div #dpsContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+      <div
+        *ngFor="let p of availableDps; trackBy: trackByNom"
+        [attr.data-nom]="p.nom"
+        [attr.data-classe]="p.classe"
+        [style.backgroundColor]="getClasseColorHex(p.classe)"
+        [style.color]="getClasseTextColor(p.classe)"
+        style="width: 150px; height: 60px; background: lightgray; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+      >
+        <img *ngIf="getSpecIcon(p.specialisation, p.classe)"
+             [src]="getSpecIcon(p.specialisation, p.classe)"
+             alt="{{ p.specialisation }}"
+             style="width: 16px; height: 16px;" />
+        <span>{{ p.nom }}</span>
+        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">
+           R
+        </span>
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'"
+          class="status-dot yellow"
+          title="Participation : Tentative"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'"
+          class="status-dot orange"
+          title="Participation : Bench"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'"
+          class="status-dot red"
+          title="Participation : En retard (Late)"
+        ></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEALS -->
+  <div>
+    <h4 style="color: lightgreen;">✨ Healers</h4>
+    <div #healContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+      <div
+        *ngFor="let p of availableHeals; trackBy: trackByNom"
+        [attr.data-nom]="p.nom"
+        [attr.data-classe]="p.classe"
+        [style.backgroundColor]="getClasseColorHex(p.classe)"
+        [style.color]="getClasseTextColor(p.classe)"
+        style="width: 150px; height: 60px; background: lightgray; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+      >
+        <img *ngIf="getSpecIcon(p.specialisation, p.classe)"
+             [src]="getSpecIcon(p.specialisation, p.classe)"
+             alt="{{ p.specialisation }}"
+             style="width: 16px; height: 16px;" />
+        <span>{{ p.nom }}</span>
+        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">
+           R
+        </span>
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'"
+          class="status-dot yellow"
+          title="Participation : Tentative"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'"
+          class="status-dot orange"
+          title="Participation : Bench"
+        ></span>
+
+        <span
+          *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'"
+          class="status-dot red"
+          title="Participation : En retard (Late)"
+        ></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-2 gap-6 text-white text-sm">
+  <!-- Buffs -->
+  <div>
+    <h3 class="text-lg font-bold mb-2">🛡️ Raid Buffs</h3>
+    <div *ngFor="let buff of raidBuffList">
+      <span [ngClass]="getBuffClass(coveredRaidBuffs[buff])">{{ coveredRaidBuffs[buff] || 0 }} {{ buff }}</span>
+    </div>
+  </div>
+
+  <!-- Debuffs -->
+  <div>
+    <h3 class="text-lg font-bold mb-2">💀 Raid Debuffs</h3>
+    <div *ngFor="let debuff of raidDebuffList">
+      <span [ngClass]="getBuffClass(coveredRaidDebuffs[debuff])">{{ coveredRaidDebuffs[debuff] || 0 }} {{ debuff }}</span>
+    </div>
+  </div>
+</div>

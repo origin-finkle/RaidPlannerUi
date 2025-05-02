@@ -1,0 +1,39 @@
+<div class="p-4">
+  <!-- Sélecteur de jour -->
+  <div class="flex gap-4 mb-6">
+    <button
+      *ngFor="let day of groupedRaids"
+      (click)="selectDay(day)"
+      [class.bg-blue-600]="day === selectedDay"
+      class="px-3 py-1 rounded bg-gray-700 text-white hover:bg-blue-500"
+    >
+      {{ formatDateLabel(day.date) }}
+    </button>
+  </div>
+
+  <!-- Sélecteur de raid dans la journée -->
+  <div class="mb-4 flex gap-2">
+    <button
+      *ngFor="let raid of selectedDay?.raids"
+      (click)="onRaidChange(raid)"
+      class="px-4 py-2 rounded-md font-medium transition duration-200"
+      [ngClass]="{
+      'bg-blue-600 text-white font-bold ring-2 ring-blue-300 shadow-lg scale-105': selectedRaid?.id === raid.id,
+      'bg-gray-700 text-gray-200': selectedRaid?.id !== raid.id
+    }"
+    >
+      Raid {{ formatRaidDate(raid.heure) }}
+    </button>
+  </div>
+
+  <!-- Composant de composition -->
+  <app-raid-composition
+    *ngIf="selectedRaid"
+    [raidId]="selectedRaid.id"
+    [joueurs]="selectedRaid.joueurDTOList || []"
+    [group1FromRaid]="selectedRaid.group1 || []"
+    [group2FromRaid]="selectedRaid.group2 || []"
+    [usedCharacters]="getUsedCharactersForSelectedDay()"
+    (compositionChanged)="onCompositionChanged($event)"
+  ></app-raid-composition>
+</div>

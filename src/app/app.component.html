@@ -1,0 +1,17 @@
+<!-- Header fixé -->
+<header
+  class="fixed top-0 left-0 right-0 z-[1000] bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-md"
+>
+  <div class="text-xl font-bold tracking-wide">
+    🛡️ WoW Raid Planner
+  </div>
+  <nav class="space-x-4">
+    <a href="/raids" class="hover:underline text-gray-200">Raids</a>
+    <a href="/admin" class="hover:underline text-gray-200">Administration</a>
+  </nav>
+</header>
+
+<!-- Contenu principal décalé sous le header -->
+<main class="pt-24 px-6 pb-6">
+  <router-outlet></router-outlet>
+</main>

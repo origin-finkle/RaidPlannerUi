@@ -1,0 +1,35 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Tu peux ajouter ici des styles personnalisés WoW si besoin */
+body {
+  @apply bg-wow-bg text-wow-text font-wow;
+}
+
+[cdkDropList] {
+  @apply block min-h-[50px] p-2 bg-slate-800 rounded-xl;
+}
+
+[cdkDrag] {
+  @apply block p-2 mb-1 bg-slate-600 rounded cursor-move;
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #ccc;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.5;
+}
+
+.ng-dropdown-panel {
+  z-index: 9999 !important;
+}
+
