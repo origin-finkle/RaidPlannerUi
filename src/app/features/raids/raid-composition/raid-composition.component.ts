@@ -180,7 +180,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
 
     'Paladin-Sacré': '<:paladin_sacre:1363215077452419254>',
     'Paladin-Rétribution': '<:paladin_retribution:1363215074520727735>',
-    'Paladin-Protection': '<:paladin-protection:1363215984923513033>',
+    'Paladin-Protection': '<:paladin_protection:1363215984923513033>',
 
     'Chaman-Elem': '<:chaman_elem:1363215015540166768>',
     'Chaman-Amélio': '<:chaman_amelioration:1363214654284894429>',
