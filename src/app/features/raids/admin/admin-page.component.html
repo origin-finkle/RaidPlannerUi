@@ -1,141 +1,1092 @@
-<div class="text-white">
-  <h1 class="text-2xl font-bold mb-4">🎧 Raideurs avec pseudo IHM</h1>
-  <table class="w-full text-left border border-gray-600">
-    <thead class="bg-gray-800 text-gray-300">
-    <tr>
-      <th class="p-2">Pseudo Discord</th>
-      <th class="p-2">Pseudo IHM</th>
-      <th class="p-2">Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr *ngFor="let joueur of joueurs" class="border-t border-gray-600">
-      <td class="p-2">{{ joueur.serverPseudo }}</td>
-      <td class="p-2">
-        <input type="text" [value]="joueur.pseudoIhm" (change)="onPseudoChange($event, joueur)"
-               class="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white" />
-      </td>
-      <td class="p-2 space-x-2">
-        <button (click)="onEditPlayer(joueur)" class="text-yellow-300 hover:underline">✏️ Modifier</button>
-      </td>
-    </tr>
-    </tbody>
-  </table>
-
-  <!-- Nouvelle modale moderne -->
-  <div *ngIf="joueurEnCours" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 pt-20">
-    <div class="bg-gray-900 text-white rounded-xl shadow-xl w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh] relative">
-      <!-- Header -->
-      <div class="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-        <h2 class="text-2xl font-bold">🛠 Modifier les personnages</h2>
-        <button (click)="fermerDialog()" class="text-gray-400 hover:text-red-400 text-lg font-bold">&times;</button>
-      </div>
-
-      <p class="mb-4 text-sm text-gray-300">
-        Pour <strong>{{ joueurEnCours.pseudoIhm }}</strong>
+﻿<section class="admin-page">
+  <div class="admin-hero">
+    <div class="admin-hero__copy">
+      <span class="admin-kicker">Centre de controle officier</span>
+      <h1>Pilote le roster, les diagnostics et les rappels depuis un seul endroit</h1>
+      <p>
+        Garde un oeil sur les sources Discord, les snapshots d'inscrits et les personnages visibles sans changer d'ecran.
       </p>
+    </div>
 
-      <!-- Formulaire ajout -->
-      <div class="bg-gray-800 p-4 rounded-lg border border-dashed border-gray-600 mb-6">
-        <h3 class="text-lg font-semibold mb-3">➕ Nouveau personnage</h3>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2">
-          <label class="text-sm w-24">Nom</label>
-          <input [(ngModel)]="nouveauPersonnage.nom" class="bg-gray-600 text-white p-1 rounded w-full md:w-64" />
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Classe</label>
-          <select [(ngModel)]="nouveauPersonnage.classe" (change)="onClasseChange(nouveauPersonnage)"
-                  class="bg-gray-600 text-white p-1 rounded w-full md:w-64">
-            <option *ngFor="let classe of classes" [value]="classe">{{ classe }}</option>
-          </select>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Spécialisation</label>
-          <select [(ngModel)]="nouveauPersonnage.specialisation" class="bg-gray-600 text-white p-1 rounded w-full md:w-64">
-            <option *ngFor="let spec of getSpecialisationsPourClasse(nouveauPersonnage.classe) || []" [value]="spec">
-              {{ spec }}
-            </option>
-          </select>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Rôle</label>
-          <select [(ngModel)]="nouveauPersonnage.role" class="bg-gray-600 text-white p-1 rounded w-full md:w-64">
-            <option value="Tank">Tank</option>
-            <option value="Heal">Heal</option>
-            <option value="DPS">DPS</option>
-          </select>
-        </div>
-
-        <div class="flex items-center mt-2">
-          <label class="text-sm mr-2">Main ?</label>
-          <input type="checkbox" [(ngModel)]="nouveauPersonnage.main" />
-        </div>
-
-        <div class="mt-4 text-right">
-          <button (click)="ajouterPersonnage()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded">
-            ✅ Ajouter
-          </button>
-        </div>
+    <div class="admin-hero__stats">
+      <div class="admin-stat">
+        <span>Raideurs synchronises</span>
+        <strong>{{ joueurs.length }}</strong>
       </div>
-
-      <!-- Liste des personnages existants -->
-      <div *ngFor="let perso of personnagesDuJoueur" class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex flex-col md:flex-row md:items-center gap-2">
-          <label class="text-sm w-24">Nom</label>
-          <input [(ngModel)]="perso.nom" class="bg-gray-700 text-white p-1 rounded w-full md:w-64" />
-          <span *ngIf="perso.main" class="ml-2 px-2 py-0.5 text-xs bg-yellow-400 text-black rounded">MAIN</span>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Classe</label>
-          <select [(ngModel)]="perso.classe" (change)="onClasseChange(perso)"
-                  class="bg-gray-700 text-white p-1 rounded w-full md:w-64">
-            <option *ngFor="let classe of classes" [value]="classe">{{ classe }}</option>
-          </select>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Spécialisation</label>
-          <select [(ngModel)]="perso.specialisation" class="bg-gray-700 text-white p-1 rounded w-full md:w-64">
-            <option *ngFor="let spec of getSpecialisationsPourClasse(perso.classe) || []" [value]="spec">
-              {{ spec }}
-            </option>
-          </select>
-        </div>
-
-
-        <div class="flex flex-col md:flex-row md:items-center gap-2 mt-2">
-          <label class="text-sm w-24">Rôle</label>
-          <select [(ngModel)]="perso.role" class="bg-gray-700 text-white p-1 rounded w-full md:w-64">
-            <option value="Tank">Tank</option>
-            <option value="Heal">Heal</option>
-            <option value="DPS">DPS</option>
-          </select>
-        </div>
-
-        <div class="mt-4 text-right">
-          <button (click)="enregistrerPersonnage(perso)"
-                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded">
-            📏 Enregistrer
-          </button>
-
-        </div>
-        <div class="mt-4 text-right">
-          <button (click)="supprimerPersonnage(perso)"
-                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded">
-            🗑 Supprimer
-          </button>
-        </div>
+      <div class="admin-stat">
+        <span>Raids visibles</span>
+        <strong>{{ totalRaidCount }}</strong>
       </div>
-
-      <!-- Footer -->
-      <div class="mt-6 flex justify-end gap-2 border-t border-gray-700 pt-4">
-        <button class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded" (click)="fermerDialog()">Fermer</button>
+      <div class="admin-stat">
+        <span>Diagnostics en ecart</span>
+        <strong>{{ diagnosticDiffCount }}</strong>
       </div>
     </div>
   </div>
-</div>
+
+  <div class="admin-tabs">
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'dashboard'" (click)="selectTab('dashboard')">
+      Vue globale
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'roster'" (click)="selectTab('roster')">
+      Roster
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'health'" (click)="selectTab('health')">
+      Alertes
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'equity'" (click)="selectTab('equity')">
+      Equite
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'diagnostics'" (click)="selectTab('diagnostics')">
+      Diagnostics
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'reminders'" (click)="selectTab('reminders')">
+      Rappels
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'tests'" (click)="selectTab('tests')">
+      Tests
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'templates'" (click)="selectTab('templates')">
+      Templates
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'settings'" (click)="selectTab('settings')">
+      Reglages
+    </button>
+    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'history'" (click)="selectTab('history')">
+      Historique
+    </button>
+  </div>
+
+  <ng-container *ngIf="activeTab === 'dashboard'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Dashboard officier</span>
+          <h2>Vue d'ensemble des raids a surveiller</h2>
+        </div>
+        <button type="button" class="button button--ghost" (click)="loadOfficerDashboard(); loadRaidSchedulerStatus()">Rafraichir</button>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isDashboardLoading">Chargement du dashboard officier...</div>
+      <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isDashboardLoading && dashboardErrorMessage">{{ dashboardErrorMessage }}</div>
+      <div class="feedback-banner" *ngIf="quickActionFeedback && !isDashboardLoading">{{ quickActionFeedback }}</div>
+
+      <div class="admin-card admin-card--subtle" *ngIf="isSchedulerLoading || raidSchedulerStatus || schedulerErrorMessage">
+        <div class="admin-card__header">
+          <div>
+            <span class="admin-kicker">Import automatique des raids</span>
+            <h2>Publication attendue le {{ raidSchedulerStatus?.publicationDay || 'jeudi' }} a {{ raidSchedulerStatus?.publicationTime || '21:00' }}</h2>
+          </div>
+        </div>
+
+        <div class="diagnostic-empty" *ngIf="isSchedulerLoading">Chargement du scheduler d'import...</div>
+        <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isSchedulerLoading && schedulerErrorMessage">{{ schedulerErrorMessage }}</div>
+
+        <ng-container *ngIf="raidSchedulerStatus && !isSchedulerLoading">
+          <div class="diagnostic-summary-grid">
+            <article class="info-card">
+              <span class="info-card__label">Prochain import</span>
+              <strong>{{ raidSchedulerStatus.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus.nextRunAt) : 'Non calcule' }}</strong>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Dernier passage</span>
+              <strong>{{ raidSchedulerStatus.lastRunAt ? formatDateTimeLabel(raidSchedulerStatus.lastRunAt) : 'Aucun' }}</strong>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Derniers imports</span>
+              <strong>{{ raidSchedulerStatus.lastImportedCount ?? 0 }}</strong>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Fuseau</span>
+              <strong>{{ raidSchedulerStatus.timezone }}</strong>
+            </article>
+          </div>
+
+          <div class="pill-row">
+            <span class="player-pill" *ngFor="let channelName of raidSchedulerStatus.channelNames">{{ channelName }}</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <ng-container *ngIf="officerDashboard && !isDashboardLoading">
+        <div class="diagnostic-summary-grid">
+          <article class="info-card">
+            <span class="info-card__label">Raids suivis</span>
+            <strong>{{ officerDashboard.trackedRaids }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Publications a faire</span>
+            <strong>{{ officerDashboard.readyToPublishCount }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Confirmations en attente</span>
+            <strong>{{ officerDashboard.pendingConfirmationRaidCount }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Raids avec refus</span>
+            <strong>{{ officerDashboard.raidsWithDeclines }}</strong>
+          </article>
+        </div>
+
+        <div class="officer-feed" *ngIf="officerFeedItems.length; else noOfficerFeed">
+          <article
+            class="officer-feed-card"
+            *ngFor="let item of officerFeedItems"
+            [attr.data-severity]="item.severity"
+          >
+            <div class="officer-feed-card__header">
+              <div>
+                <span class="admin-kicker">Signal officier</span>
+                <h3>{{ item.title }}</h3>
+              </div>
+              <span class="info-badge" [attr.data-severity]="item.severity">{{ severityLabel(item.severity) }}</span>
+            </div>
+            <p>{{ item.message }}</p>
+            <div class="pill-row">
+              <span class="player-pill">{{ formatDateTimeLabel(item.raidDate) }}</span>
+            </div>
+            <div class="character-card__actions character-card__actions--start">
+              <button type="button" class="button button--primary" (click)="triggerFeedAction(item)">
+                {{ item.primaryActionLabel }}
+              </button>
+              <button type="button" class="button button--ghost" (click)="quickRescanRaid(item.raidId)">
+                Rescanner
+              </button>
+            </div>
+          </article>
+        </div>
+        <ng-template #noOfficerFeed>
+          <div class="diagnostic-empty">Aucune alerte prioritaire pour le moment.</div>
+        </ng-template>
+
+        <div class="history-list" *ngIf="officerDashboard.raids.length; else noDashboardRaids">
+          <article class="history-card" *ngFor="let raid of officerDashboard.raids">
+            <div class="history-card__header">
+              <div>
+                <h3>{{ raid.raidNom }}</h3>
+                <p>{{ formatDateTimeLabel(raid.raidDate) }}</p>
+              </div>
+              <div class="badge-row">
+                <span class="info-badge">{{ raid.compositionStatus }}</span>
+                <span class="info-badge" *ngIf="raid.published">Publie</span>
+                <span class="info-badge" *ngIf="raid.compositionLocked">Verrouille</span>
+              </div>
+            </div>
+
+            <div class="meta-list">
+              <div class="meta-row"><span>Compo</span><strong>{{ raid.totalAssignedPlayers }} assigne(s)</strong></div>
+              <div class="meta-row"><span>Confirmes</span><strong>{{ raid.confirmedCount }}</strong></div>
+              <div class="meta-row"><span>Refus</span><strong>{{ raid.cancelledCount }}</strong></div>
+              <div class="meta-row"><span>En attente</span><strong>{{ raid.pendingCount }}</strong></div>
+            </div>
+
+            <div class="pill-row" *ngIf="raid.actions.length">
+              <span class="player-pill" *ngFor="let action of raid.actions">{{ action }}</span>
+            </div>
+
+            <div class="character-card__actions">
+              <button type="button" class="button button--primary" (click)="openRaidInPlanner(raid.raidId, raid.raidDate)">
+                Ouvrir le planner
+              </button>
+              <button type="button" class="button button--secondary" (click)="openRaidOperations(raid.raidId, 'diagnostics')">
+                Diagnostic
+              </button>
+              <button type="button" class="button button--secondary" (click)="openRaidOperations(raid.raidId, 'reminders')">
+                Rappels
+              </button>
+              <button type="button" class="button button--ghost" (click)="quickRescanRaid(raid.raidId)">
+                Rescanner
+              </button>
+              <button type="button" class="button button--ghost" (click)="openRaidOperations(raid.raidId, 'tests')">
+                Tests
+              </button>
+            </div>
+          </article>
+        </div>
+        <ng-template #noDashboardRaids>
+          <div class="diagnostic-empty">Aucun raid a suivre pour la periode actuelle.</div>
+        </ng-template>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'roster'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Roster</span>
+          <h2>Roster visible dans l'application</h2>
+        </div>
+        <span class="admin-card__meta">Clique sur Modifier pour gerer les personnages d'un joueur.</span>
+      </div>
+
+      <div class="roster-table">
+        <div class="roster-table__head">
+          <span>Pseudo Discord</span>
+          <span>Pseudo IHM</span>
+          <span>Action</span>
+        </div>
+
+        <div *ngFor="let joueur of joueurs" class="roster-row">
+          <div class="roster-row__identity">
+            <strong>{{ joueur.serverPseudo }}</strong>
+            <span>{{ joueur.pseudo }}</span>
+          </div>
+
+          <div>
+            <input
+              type="text"
+              [value]="joueur.pseudoIhm"
+              (change)="onPseudoChange($event, joueur)"
+              class="admin-input"
+            />
+          </div>
+
+          <div class="roster-row__actions">
+            <button type="button" (click)="onEditPlayer(joueur)" class="button button--secondary">
+              Modifier
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'equity'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Vue joueur</span>
+          <h2>Equilibre les soirs de raid sur les 4 dernieres semaines</h2>
+        </div>
+        <button type="button" class="button button--ghost" (click)="loadPlayerEquity()">Rafraichir</button>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isEquityLoading">Chargement de la vue d'equite...</div>
+      <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isEquityLoading && equityErrorMessage">{{ equityErrorMessage }}</div>
+
+      <ng-container *ngIf="playerEquity && !isEquityLoading">
+        <div class="feedback-banner">
+          Fenetre analysee: {{ formatDateLabel(playerEquity.rangeStart) }} au {{ formatDateLabel(playerEquity.rangeEnd) }} · {{ playerEquity.totalPlayers }} joueur(s)
+        </div>
+
+        <div class="roster-table">
+          <div class="roster-table__head">
+            <span>Joueur</span>
+            <span>Raids joues</span>
+            <span>Inscriptions</span>
+            <span>Main / reroll</span>
+            <span>Bench / late / tentative / absence</span>
+          </div>
+
+          <div *ngFor="let player of playerEquity.players" class="roster-row">
+            <div class="roster-row__identity">
+              <strong>{{ player.pseudoIhm }}</strong>
+              <span>{{ player.serverPseudo }}</span>
+            </div>
+            <div><strong>{{ player.raidsAssigned }}</strong></div>
+            <div><strong>{{ player.signupsCount }}</strong></div>
+            <div><strong>{{ player.mainAssignments }} main · {{ player.rerollAssignments }} reroll</strong></div>
+            <div><strong>{{ player.benchCount }} bench · {{ player.lateCount }} late · {{ player.tentativeCount }} tentative · {{ player.absenceCount }} absence</strong></div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'health'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Sante du planning</span>
+          <h2>Repere les raids qui demandent une action</h2>
+        </div>
+        <button type="button" class="button button--ghost" (click)="loadPlanningHealth()">Rafraichir</button>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isHealthLoading">Chargement de la sante du planning...</div>
+      <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isHealthLoading && healthErrorMessage">{{ healthErrorMessage }}</div>
+
+      <ng-container *ngIf="planningHealth && !isHealthLoading">
+        <div class="diagnostic-summary-grid">
+          <article class="info-card">
+            <span class="info-card__label">Raids suivis</span>
+            <strong>{{ planningHealth.totalRaids }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Raids avec alertes</span>
+            <strong>{{ planningHealth.raidsWithIssues }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Raids sans inscrits</span>
+            <strong>{{ planningHealth.raidsWithoutSignups }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Compos non publiees</span>
+            <strong>{{ planningHealth.unpublishedRaids }}</strong>
+          </article>
+        </div>
+
+        <div class="health-list" *ngIf="planningHealth.issues.length; else noHealthIssues">
+          <article class="diagnostic-card health-card" *ngFor="let issue of planningHealth.issues">
+            <div class="health-card__header">
+              <div>
+                <h3>{{ issue.raidNom }}</h3>
+                <p>{{ formatDateTimeLabel(issue.raidDate) }}</p>
+              </div>
+              <span class="info-badge" [attr.data-severity]="issue.severity">{{ severityLabel(issue.severity) }}</span>
+            </div>
+
+            <div class="meta-list">
+              <div class="meta-row"><span>Live</span><strong>{{ issue.liveSignupCount }} inscrit(s)</strong></div>
+              <div class="meta-row"><span>Snapshot</span><strong>{{ issue.snapshotSignupCount }} inscrit(s)</strong></div>
+              <div class="meta-row"><span>Publication</span><strong>{{ issue.published ? 'Publiee' : 'Non publiee' }}</strong></div>
+            </div>
+
+            <div class="pill-row">
+              <span class="player-pill" *ngFor="let label of issue.issues">{{ label }}</span>
+            </div>
+
+            <div class="character-card__actions">
+              <button type="button" class="button button--primary" (click)="openRaidInPlanner(issue.raidId, issue.raidDate)">
+                Ouvrir le planner
+              </button>
+              <button type="button" class="button button--secondary" (click)="openRaidOperations(issue.raidId, 'diagnostics')">
+                Diagnostic
+              </button>
+              <button type="button" class="button button--ghost" (click)="quickRescanRaid(issue.raidId)">
+                Rescanner
+              </button>
+            </div>
+          </article>
+        </div>
+        <ng-template #noHealthIssues>
+          <div class="diagnostic-empty">Tout est propre pour les deux prochaines semaines de reset.</div>
+        </ng-template>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'diagnostics' || activeTab === 'reminders' || activeTab === 'tests'">
+    <div class="admin-card operational-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Operations raid</span>
+          <h2>
+            {{
+              activeTab === 'diagnostics'
+                ? 'Diagnostic de la source Raid-Helper'
+                : activeTab === 'reminders'
+                  ? 'Rappels des non-inscrits'
+                  : 'Publications de test'
+            }}
+          </h2>
+        </div>
+        <span class="admin-card__meta">
+          {{ activeTab === 'diagnostics'
+            ? 'Compare la source stockee, la source resolue et le snapshot en base.'
+            : activeTab === 'reminders'
+              ? 'Prepare une relance propre et envoie-la dans le salon de test si besoin.'
+              : 'Teste la publication de la compo sans polluer les vrais salons de raid.' }}
+        </span>
+      </div>
+
+      <div class="operational-toolbar">
+        <label class="field field--wide">
+          <span>Raid cible</span>
+          <select class="admin-input" [(ngModel)]="selectedOperationalRaidId" (ngModelChange)="onOperationalRaidChange()">
+            <option [ngValue]="null">Selectionne un raid</option>
+            <option *ngFor="let option of raidOptions" [ngValue]="option.id">{{ option.label }}</option>
+          </select>
+        </label>
+
+        <div class="operational-toolbar__actions">
+          <button type="button" class="button button--ghost" (click)="refreshOperationalData()">
+            Rafraichir
+          </button>
+          <button type="button" class="button button--secondary" [disabled]="!selectedOperationalRaidId || isRescanningRaid" (click)="rescanSelectedRaid()">
+            {{ isRescanningRaid ? 'Rescan...' : 'Rescanner ce raid' }}
+          </button>
+          <a *ngIf="selectedOperationalRaidId" [routerLink]="['/raids', selectedOperationalRaidId, 'diagnostic']" class="button button--secondary button-link">
+            Ouvrir la page detaillee
+          </a>
+        </div>
+      </div>
+
+      <div class="feedback-banner" *ngIf="reminderFeedback">
+        {{ reminderFeedback }}
+      </div>
+
+      <ng-container *ngIf="activeTab === 'diagnostics'">
+        <div class="diagnostic-empty" *ngIf="!selectedOperationalRaidId">
+            Selectionne un raid pour afficher son diagnostic.
+        </div>
+
+        <div class="diagnostic-empty" *ngIf="selectedOperationalRaidId && isDiagnosticLoading">
+          Chargement du diagnostic du raid...
+        </div>
+
+        <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="selectedOperationalRaidId && !isDiagnosticLoading && diagnosticErrorMessage">
+          {{ diagnosticErrorMessage }}
+        </div>
+
+        <div class="diagnostic-shell" *ngIf="raidDiagnostic && !isDiagnosticLoading">
+          <div class="diagnostic-summary-grid">
+            <article class="info-card">
+              <span class="info-card__label">Raid</span>
+              <strong>{{ raidDiagnostic.nom }}</strong>
+              <p>{{ formatDateTimeLabel(raidDiagnostic.date) }}</p>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Source stockee</span>
+              <strong>{{ raidDiagnostic.storedMessageId }}</strong>
+              <p>Salon {{ raidDiagnostic.storedChannelId }}</p>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Source resolue</span>
+              <strong>{{ raidDiagnostic.resolvedMessage?.messageId || 'Aucune' }}</strong>
+              <p>{{ raidDiagnostic.sourceChanged ? 'Source corrigee' : 'Source stable' }}</p>
+            </article>
+            <article class="info-card">
+              <span class="info-card__label">Ecart live/base</span>
+              <strong>{{ diagnosticDiffCount }}</strong>
+              <p>{{ raidDiagnostic.liveSignups.length }} live · {{ raidDiagnostic.snapshotSignups.length }} snapshot</p>
+            </article>
+          </div>
+
+          <div class="diagnostic-message-grid">
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Message stocke</span>
+              <h3>{{ raidDiagnostic.storedMessage?.author || 'Indisponible' }}</h3>
+              <div class="badge-row" *ngIf="raidDiagnostic.storedMessage">
+                <span class="info-badge" *ngFor="let badge of messageBadges(raidDiagnostic.storedMessage)">{{ badge }}</span>
+              </div>
+              <div class="meta-list" *ngIf="raidDiagnostic.storedMessage">
+                <div class="meta-row"><span>Date</span><strong>{{ formatDateTimeLabel(raidDiagnostic.storedMessage.createdAt) }}</strong></div>
+                <div class="meta-row"><span>Nom extrait</span><strong>{{ raidDiagnostic.storedMessage.extractedNom || 'Inconnu' }}</strong></div>
+                <div class="meta-row"><span>Date extraite</span><strong>{{ formatDateTimeLabel(raidDiagnostic.storedMessage.extractedDate) }}</strong></div>
+                <div class="meta-row"><span>Message lie</span><strong>{{ raidDiagnostic.storedMessage.linkedMessageId || 'Aucun' }}</strong></div>
+              </div>
+              <a *ngIf="raidDiagnostic.storedMessage?.url" [href]="raidDiagnostic.storedMessage?.url || '#'
+" target="_blank" rel="noreferrer" class="panel-link">Ouvrir dans Discord</a>
+            </article>
+
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Message resolu</span>
+              <h3>{{ raidDiagnostic.resolvedMessage?.author || 'Indisponible' }}</h3>
+              <div class="badge-row" *ngIf="raidDiagnostic.resolvedMessage">
+                <span class="info-badge" *ngFor="let badge of messageBadges(raidDiagnostic.resolvedMessage)">{{ badge }}</span>
+              </div>
+              <div class="meta-list" *ngIf="raidDiagnostic.resolvedMessage">
+                <div class="meta-row"><span>Date</span><strong>{{ formatDateTimeLabel(raidDiagnostic.resolvedMessage.createdAt) }}</strong></div>
+                <div class="meta-row"><span>Nom extrait</span><strong>{{ raidDiagnostic.resolvedMessage.extractedNom || 'Inconnu' }}</strong></div>
+                <div class="meta-row"><span>Date extraite</span><strong>{{ formatDateTimeLabel(raidDiagnostic.resolvedMessage.extractedDate) }}</strong></div>
+                <div class="meta-row"><span>Message lie</span><strong>{{ raidDiagnostic.resolvedMessage.linkedMessageId || 'Aucun' }}</strong></div>
+              </div>
+              <a *ngIf="raidDiagnostic.resolvedMessage?.url" [href]="raidDiagnostic.resolvedMessage?.url || '#'
+" target="_blank" rel="noreferrer" class="panel-link">Ouvrir dans Discord</a>
+            </article>
+          </div>
+
+          <div class="diagnostic-signups-grid">
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Inscrits live</span>
+              <h3>{{ raidDiagnostic.liveSignups.length }} joueur(s)</h3>
+              <ul class="signup-list" *ngIf="raidDiagnostic.liveSignups.length; else noLiveSignups">
+                <li *ngFor="let signup of raidDiagnostic.liveSignups">
+                  <strong>{{ signup.personnageNom || signup.pseudoIhm || signup.serverPseudo }}</strong>
+                  <span>{{ signup.classe }} · {{ signup.specialisation }} · {{ signup.statutParticipation || 'TITULAIRE' }}</span>
+                </li>
+              </ul>
+              <ng-template #noLiveSignups>
+                <p class="empty-copy">Aucun inscrit live n'a ete extrait.</p>
+              </ng-template>
+            </article>
+
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Snapshot en base</span>
+              <h3>{{ raidDiagnostic.snapshotSignups.length }} joueur(s)</h3>
+              <ul class="signup-list" *ngIf="raidDiagnostic.snapshotSignups.length; else noSnapshotSignups">
+                <li *ngFor="let signup of raidDiagnostic.snapshotSignups">
+                  <strong>{{ signup.personnageNom || signup.pseudoIhm || signup.serverPseudo }}</strong>
+                  <span>{{ signup.classe }} · {{ signup.specialisation }} · {{ signup.statutParticipation || 'TITULAIRE' }}</span>
+                </li>
+              </ul>
+              <ng-template #noSnapshotSignups>
+                <p class="empty-copy">Aucun snapshot persiste pour ce raid.</p>
+              </ng-template>
+            </article>
+          </div>
+
+          <div class="diagnostic-diff-grid">
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Live uniquement</span>
+              <h3>{{ raidDiagnostic.liveOnlyPlayers.length }} ecart(s)</h3>
+              <ul class="difference-list" *ngIf="raidDiagnostic.liveOnlyPlayers.length; else noLiveOnly">
+                <li *ngFor="let player of raidDiagnostic.liveOnlyPlayers">{{ player }}</li>
+              </ul>
+              <ng-template #noLiveOnly>
+                <p class="empty-copy">Aucun joueur supplementaire dans le live.</p>
+              </ng-template>
+            </article>
+
+            <article class="diagnostic-card">
+              <span class="admin-kicker">Snapshot uniquement</span>
+              <h3>{{ raidDiagnostic.snapshotOnlyPlayers.length }} ecart(s)</h3>
+              <ul class="difference-list" *ngIf="raidDiagnostic.snapshotOnlyPlayers.length; else noSnapshotOnly">
+                <li *ngFor="let player of raidDiagnostic.snapshotOnlyPlayers">{{ player }}</li>
+              </ul>
+              <ng-template #noSnapshotOnly>
+                <p class="empty-copy">Aucun joueur obsolete dans le snapshot.</p>
+              </ng-template>
+            </article>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab === 'reminders'">
+        <div class="reminder-panel">
+          <div class="reminder-actions">
+            <button type="button" class="button button--secondary" [disabled]="!selectedOperationalRaidId || isBuildingMissingPing" (click)="buildMissingPingForSelectedRaid()">
+              {{ isBuildingMissingPing ? 'Preparation...' : 'Copier le rappel' }}
+            </button>
+            <button type="button" class="button button--primary" [disabled]="!selectedOperationalRaidId || isSendingMissingPingToTest" (click)="sendMissingPingToTestChannel()">
+              {{ isSendingMissingPingToTest ? 'Envoi...' : 'Envoyer sur salon test' }}
+            </button>
+          </div>
+
+          <div class="reminder-preview" *ngIf="reminderPreview; else reminderEmpty">
+            <span class="admin-kicker">Apercu du message</span>
+            <pre>{{ reminderPreview }}</pre>
+          </div>
+          <ng-template #reminderEmpty>
+            <div class="diagnostic-empty">Genere un rappel pour voir le message et la liste des non-inscrits.</div>
+          </ng-template>
+
+          <div class="reminder-missing" *ngIf="missingPingPlayers.length">
+            <span class="admin-kicker">Non inscrits identifies</span>
+            <div class="pill-row">
+              <span class="player-pill" *ngFor="let player of missingPingPlayers">{{ player }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="activeTab === 'tests'">
+        <div class="tests-panel">
+          <div class="tests-actions">
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="!selectedOperationalRaidId || isPreviewingAutoCompose"
+              (click)="previewAutoComposeSelectedWeek()"
+            >
+              {{ isPreviewingAutoCompose ? 'Preview...' : 'Previsualiser auto-compose' }}
+            </button>
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="!selectedOperationalRaidId"
+              (click)="copySavedCompositionPreview()"
+            >
+              Copier le texte de la compo
+            </button>
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="!selectedOperationalRaidId || isPublishingSignupFlowTest"
+              (click)="publishSignupFlowToTestChannel()"
+            >
+              {{ isPublishingSignupFlowTest ? 'Publication...' : 'Publier inscriptions test' }}
+            </button>
+            <button
+              type="button"
+              class="button button--primary"
+              [disabled]="!selectedOperationalRaidId || isPublishingCompositionTest"
+              (click)="publishSavedCompositionToTestChannel()"
+            >
+              {{ isPublishingCompositionTest ? 'Publication...' : 'Publier sur le salon test' }}
+            </button>
+          </div>
+
+          <div class="feedback-banner" *ngIf="compositionTestMessage">
+            {{ compositionTestMessage }}
+          </div>
+
+          <div class="feedback-banner" *ngIf="signupFlowTestMessage">
+            {{ signupFlowTestMessage }}
+          </div>
+
+          <div class="feedback-banner" *ngIf="autoComposePreviewMessage">
+            {{ autoComposePreviewMessage }}
+          </div>
+
+          <div class="diagnostic-card tests-preview" *ngIf="autoComposePreview.length">
+            <span class="admin-kicker">Previsualisation auto-compose</span>
+            <div class="history-list">
+              <article class="history-card" *ngFor="let preview of autoComposePreview">
+                <div class="history-card__header">
+                  <div>
+                    <h3>{{ preview.raidNom }}</h3>
+                    <p>{{ formatDateTimeLabel(preview.raidDate) }}</p>
+                  </div>
+                  <span class="info-badge">{{ preview.assignedCount }}/10</span>
+                </div>
+
+                <div class="preview-card__columns">
+                  <div>
+                    <h4>Groupe 1</h4>
+                    <ul>
+                      <li *ngFor="let personnage of preview.group1">{{ personnage.nom }} · {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4>Groupe 2</h4>
+                    <ul>
+                      <li *ngFor="let personnage of preview.group2">{{ personnage.nom }} · {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                    </ul>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <div class="pill-row" *ngIf="autoComposePreviewWarnings.length">
+              <span class="player-pill" *ngFor="let warning of autoComposePreviewWarnings">{{ warning }}</span>
+            </div>
+          </div>
+
+          <div class="diagnostic-card tests-preview" *ngIf="selectedOperationalRaid; else noTestRaidSelected">
+            <span class="admin-kicker">Apercu de la compo sauvegardee</span>
+            <h3>{{ selectedOperationalRaid.nom }}</h3>
+            <p>Salon de test cible: 1355602641748496394</p>
+            <pre>{{ savedCompositionPreview }}</pre>
+          </div>
+          <ng-template #noTestRaidSelected>
+            <div class="diagnostic-empty">
+              Selectionne un raid pour voir la compo sauvegardee et la publier sur le salon de test.
+            </div>
+          </ng-template>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'settings'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Regles roster par defaut</span>
+          <h2>Regle le comportement standard de l'auto-compose</h2>
+        </div>
+        <div class="panel__actions">
+          <button type="button" class="button button--ghost" (click)="loadAutoComposeSettings()">Recharger</button>
+          <button type="button" class="button button--primary" [disabled]="isSettingsSaving" (click)="saveAutoComposeSettings()">
+            {{ isSettingsSaving ? 'Enregistrement...' : 'Enregistrer les regles' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isSettingsLoading">Chargement des regles par defaut...</div>
+
+      <div class="auto-compose-config" *ngIf="!isSettingsLoading">
+        <div class="auto-compose-config__grid">
+          <label class="config-field">
+            <span>Raids a generer</span>
+            <input type="number" min="1" max="4" [(ngModel)]="autoComposeSettings.maxRaids">
+          </label>
+          <label class="config-field">
+            <span>Tanks cibles</span>
+            <input type="number" min="0" max="3" [(ngModel)]="autoComposeSettings.targetTanks">
+          </label>
+          <label class="config-field">
+            <span>Heals cibles</span>
+            <input type="number" min="0" max="4" [(ngModel)]="autoComposeSettings.targetHeals">
+          </label>
+        </div>
+
+        <div class="auto-compose-config__toggles">
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="autoComposeSettings.preferMains">
+            <span>Privilegier les mains</span>
+          </label>
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="autoComposeSettings.balanceAcrossRaids">
+            <span>Equilibrer les joueurs sur plusieurs soirs</span>
+          </label>
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="autoComposeSettings.prioritizeBuffCoverage">
+            <span>Maximiser la couverture des buffs</span>
+          </label>
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="autoComposeSettings.huntersFillMissingBuffs">
+            <span>Compter les chasseurs pour fill les buffs via pets</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="character-form-card" *ngIf="!isSettingsLoading && raidSchedulerStatus">
+        <div class="character-form-card__title">
+          <h3>Scheduler d'import</h3>
+          <span>Choisis quand les 4 salons mercredi, jeudi, dimanche et lundi doivent etre rescannes automatiquement.</span>
+        </div>
+
+        <div class="character-grid">
+          <label class="field">
+            <span>Active</span>
+            <select [(ngModel)]="raidSchedulerStatus.enabled" class="admin-input">
+              <option [ngValue]="true">Oui</option>
+              <option [ngValue]="false">Non</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Jour</span>
+            <select [(ngModel)]="raidSchedulerStatus.dayOfWeek" class="admin-input">
+              <option *ngFor="let option of schedulerDayOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Heure</span>
+            <input type="number" min="0" max="23" [(ngModel)]="raidSchedulerStatus.hour" class="admin-input" />
+          </label>
+
+          <label class="field">
+            <span>Minute</span>
+            <input type="number" min="0" max="59" [(ngModel)]="raidSchedulerStatus.minute" class="admin-input" />
+          </label>
+
+          <label class="field">
+            <span>Fuseau</span>
+            <select [(ngModel)]="raidSchedulerStatus.timezone" class="admin-input">
+              <option *ngFor="let tz of schedulerTimezoneOptions" [value]="tz">{{ tz }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="meta-list">
+          <div class="meta-row"><span>Prochain import</span><strong>{{ raidSchedulerStatus.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus.nextRunAt) : 'Desactive' }}</strong></div>
+          <div class="meta-row"><span>Dernier import</span><strong>{{ raidSchedulerStatus.lastRunAt ? formatDateTimeLabel(raidSchedulerStatus.lastRunAt) : 'Aucun' }}</strong></div>
+          <div class="meta-row"><span>Raids importes au dernier run</span><strong>{{ raidSchedulerStatus.lastImportedCount ?? 0 }}</strong></div>
+        </div>
+
+        <div class="pill-row">
+          <span class="player-pill" *ngFor="let channelName of raidSchedulerStatus.channelNames">{{ channelName }}</span>
+        </div>
+
+        <div class="character-form-card__actions">
+          <button type="button" class="button button--ghost" [disabled]="isSchedulerLoading" (click)="loadRaidSchedulerStatus()">
+            Recharger le scheduler
+          </button>
+          <button type="button" class="button button--primary" [disabled]="isSchedulerSaving" (click)="saveRaidSchedulerStatus()">
+            {{ isSchedulerSaving ? 'Enregistrement...' : 'Enregistrer le scheduler' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="feedback-banner" *ngIf="settingsFeedback">
+        {{ settingsFeedback }}
+      </div>
+      <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="schedulerErrorMessage">
+        {{ schedulerErrorMessage }}
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'templates'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Templates de raid</span>
+          <h2>Prepare des presets reutilisables</h2>
+        </div>
+        <button type="button" class="button button--ghost" (click)="loadRaidTemplates()">Rafraichir</button>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isTemplatesLoading">Chargement des templates...</div>
+
+      <div class="character-form-card" *ngIf="!isTemplatesLoading">
+        <div class="character-form-card__title">
+          <h3>{{ templateDraft.id ? 'Edition du template' : 'Nouveau template' }}</h3>
+          <span>Definis un preset pour un type de raid ou un soir particulier.</span>
+        </div>
+
+        <div class="character-grid">
+          <label class="field">
+            <span>Nom</span>
+            <input [(ngModel)]="templateDraft.nom" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Jour</span>
+            <input [(ngModel)]="templateDraft.jourSemaine" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Heure</span>
+            <input [(ngModel)]="templateDraft.heure" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Taille raid</span>
+            <input type="number" [(ngModel)]="templateDraft.raidSize" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Tanks</span>
+            <input type="number" [(ngModel)]="templateDraft.targetTanks" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Heals</span>
+            <input type="number" [(ngModel)]="templateDraft.targetHeals" class="admin-input" />
+          </label>
+        </div>
+
+        <div class="auto-compose-config__toggles">
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="templateDraft.preferMains">
+            <span>Privilegier les mains</span>
+          </label>
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="templateDraft.prioritizeBuffCoverage">
+            <span>Prioriser les buffs</span>
+          </label>
+          <label class="config-toggle">
+            <input type="checkbox" [(ngModel)]="templateDraft.huntersFillMissingBuffs">
+            <span>Chasseurs fill buffs</span>
+          </label>
+        </div>
+
+        <div class="character-form-card__actions">
+          <button type="button" class="button button--primary" [disabled]="isTemplateSaving" (click)="saveTemplate()">
+            {{ isTemplateSaving ? 'Enregistrement...' : 'Enregistrer le template' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="feedback-banner" *ngIf="templateFeedback">{{ templateFeedback }}</div>
+
+      <div class="history-list" *ngIf="raidTemplates.length">
+        <article class="history-card" *ngFor="let template of raidTemplates">
+          <div class="history-card__header">
+            <div>
+              <h3>{{ template.nom }}</h3>
+              <p>{{ template.jourSemaine || 'Jour libre' }} · {{ template.heure || 'Heure libre' }}</p>
+            </div>
+            <div class="badge-row">
+              <span class="info-badge">{{ template.raidSize || 10 }} joueurs</span>
+              <span class="info-badge">{{ template.targetTanks || 2 }}T / {{ template.targetHeals || 2 }}H</span>
+            </div>
+          </div>
+
+          <div class="pill-row">
+            <span class="player-pill" *ngIf="template.preferMains">Mains</span>
+            <span class="player-pill" *ngIf="template.prioritizeBuffCoverage">Buffs</span>
+            <span class="player-pill" *ngIf="template.huntersFillMissingBuffs">Pets chasseurs</span>
+          </div>
+
+          <div class="character-card__actions">
+            <button type="button" class="button button--secondary" (click)="editTemplate(template)">Modifier</button>
+            <button type="button" class="button button--danger" (click)="deleteTemplate(template.id)">Supprimer</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="activeTab === 'history'">
+    <div class="admin-card">
+      <div class="admin-card__header">
+        <div>
+          <span class="admin-kicker">Historique des publications</span>
+          <h2>Retrouve les derniers envois de compos sur Discord</h2>
+        </div>
+        <button type="button" class="button button--ghost" (click)="loadPublicationHistory()">Rafraichir</button>
+      </div>
+
+      <div class="diagnostic-empty" *ngIf="isHistoryLoading">Chargement de l'historique...</div>
+      <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isHistoryLoading && historyErrorMessage">{{ historyErrorMessage }}</div>
+
+      <div class="history-list" *ngIf="!isHistoryLoading && publicationHistory.length; else noHistory">
+        <article class="history-card" *ngFor="let event of publicationHistory">
+          <div class="history-card__header">
+            <div>
+              <h3>{{ event.raidNom }}</h3>
+              <p>{{ formatDateTimeLabel(event.raidDate) }}</p>
+            </div>
+            <div class="badge-row">
+              <span class="info-badge">{{ event.updated ? 'Mise a jour' : 'Publication' }}</span>
+              <span class="info-badge">{{ event.testPublication ? 'Test' : 'Raid' }}</span>
+            </div>
+          </div>
+
+          <div class="meta-list">
+            <div class="meta-row"><span>Publie le</span><strong>{{ formatDateTimeLabel(event.publishedAt) }}</strong></div>
+            <div class="meta-row"><span>Salon</span><strong>{{ event.channelId }}</strong></div>
+            <div class="meta-row"><span>Message</span><strong>{{ event.messageId }}</strong></div>
+          </div>
+
+          <a *ngIf="event.messageUrl" [href]="event.messageUrl" target="_blank" rel="noreferrer" class="panel-link">Ouvrir dans Discord</a>
+        </article>
+      </div>
+      <ng-template #noHistory>
+          <div class="diagnostic-empty">Aucune publication de compo n'a encore ete enregistree.</div>
+      </ng-template>
+    </div>
+  </ng-container>
+
+  <div *ngIf="joueurEnCours" class="admin-modal-backdrop">
+    <div class="admin-modal">
+      <div class="admin-modal__header">
+        <div>
+          <span class="admin-kicker">Edition joueur</span>
+          <h2>{{ joueurEnCours.pseudoIhm }}</h2>
+          <p>{{ personnagesDuJoueur.length }} personnage<span *ngIf="personnagesDuJoueur.length > 1">s</span> configure<span *ngIf="personnagesDuJoueur.length > 1">s</span></p>
+        </div>
+        <button type="button" (click)="fermerDialog()" class="admin-close">&times;</button>
+      </div>
+
+      <div class="character-form-card">
+        <div class="character-form-card__title">
+          <h3>Nouveau personnage</h3>
+          <span>Ajoute rapidement un reroll ou une nouvelle spe.</span>
+        </div>
+
+        <div class="character-grid">
+          <label class="field">
+            <span>Nom</span>
+            <input [(ngModel)]="nouveauPersonnage.nom" class="admin-input" />
+          </label>
+
+          <label class="field">
+            <span>Classe</span>
+            <select [(ngModel)]="nouveauPersonnage.classe" (change)="onClasseChange(nouveauPersonnage)" class="admin-input">
+              <option *ngFor="let classe of classes" [value]="classe">{{ classe }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Specialisation</span>
+            <select [(ngModel)]="nouveauPersonnage.specialisation" class="admin-input">
+              <option *ngFor="let spec of getSpecialisationsPourClasse(nouveauPersonnage.classe) || []" [value]="spec">
+                {{ spec }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Role</span>
+            <select [(ngModel)]="nouveauPersonnage.role" class="admin-input">
+              <option value="Tank">Tank</option>
+              <option value="Heal">Heal</option>
+              <option value="DPS">DPS</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="nouveauPersonnage.main" />
+          <span>Definir comme personnage principal</span>
+        </label>
+
+        <div class="character-form-card__actions">
+          <button type="button" (click)="ajouterPersonnage()" class="button button--primary">Ajouter</button>
+        </div>
+      </div>
+
+      <div class="character-form-card" *ngIf="personnagesDuJoueur.length >= 2">
+        <div class="character-form-card__title">
+          <h3>Fusion de doublons</h3>
+          <span>Transfere les inscriptions, les groupes de raid et les references du personnage source vers la cible.</span>
+        </div>
+
+        <div class="character-grid">
+          <label class="field">
+            <span>Doublon source</span>
+            <select [(ngModel)]="mergeSourcePersonnageId" class="admin-input">
+              <option *ngFor="let personnage of mergeCandidates" [ngValue]="personnage.id">
+                {{ personnage.nom }} · {{ personnage.classe }} {{ personnage.specialisation }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Personnage cible</span>
+            <select [(ngModel)]="mergeTargetPersonnageId" class="admin-input">
+              <option *ngFor="let personnage of availableMergeTargets" [ngValue]="personnage.id">
+                {{ personnage.nom }} · {{ personnage.classe }} {{ personnage.specialisation }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <div class="character-form-card__actions">
+          <button
+            type="button"
+            class="button button--secondary"
+            [disabled]="!mergeSourcePersonnageId || !mergeTargetPersonnageId || mergeSourcePersonnageId === mergeTargetPersonnageId || isMergingPersonnages"
+            (click)="mergeSelectedPersonnages()"
+          >
+            {{ isMergingPersonnages ? 'Fusion...' : 'Fusionner les personnages' }}
+          </button>
+        </div>
+
+        <div class="feedback-banner" *ngIf="mergeFeedback">
+          {{ mergeFeedback }}
+        </div>
+      </div>
+
+      <div class="character-list">
+        <div *ngFor="let perso of personnagesDuJoueur" class="character-card">
+          <div class="character-card__header">
+            <div>
+              <h3>{{ perso.nom }}</h3>
+              <span>{{ perso.classe }} • {{ perso.specialisation }}</span>
+            </div>
+            <span *ngIf="perso.main" class="main-badge">Main</span>
+          </div>
+
+          <div class="character-grid">
+            <label class="field">
+              <span>Nom</span>
+              <input [(ngModel)]="perso.nom" class="admin-input" />
+            </label>
+
+            <label class="field">
+              <span>Classe</span>
+              <select [(ngModel)]="perso.classe" (change)="onClasseChange(perso)" class="admin-input">
+                <option *ngFor="let classe of classes" [value]="classe">{{ classe }}</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Specialisation</span>
+              <select [(ngModel)]="perso.specialisation" class="admin-input">
+                <option *ngFor="let spec of getSpecialisationsPourClasse(perso.classe) || []" [value]="spec">
+                  {{ spec }}
+                </option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Role</span>
+              <select [(ngModel)]="perso.role" class="admin-input">
+                <option value="Tank">Tank</option>
+                <option value="Heal">Heal</option>
+                <option value="DPS">DPS</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="character-card__actions">
+            <button type="button" (click)="enregistrerPersonnage(perso)" class="button button--primary">
+              Enregistrer
+            </button>
+            <button type="button" (click)="supprimerPersonnage(perso)" class="button button--danger">
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-modal__footer">
+        <button type="button" class="button button--ghost" (click)="fermerDialog()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</section>

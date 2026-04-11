@@ -1,0 +1,164 @@
+<section class="raid-diagnostic-page">
+  <div class="diagnostic-hero">
+    <div>
+      <span class="eyebrow">Diagnostic raid</span>
+      <h1 *ngIf="diagnostic; else heroFallback">{{ diagnostic.nom }}</h1>
+      <ng-template #heroFallback>
+        <h1>Diagnostic de la source Raid-Helper</h1>
+      </ng-template>
+      <p *ngIf="diagnostic">{{ formatRaidDate(diagnostic.date) }}</p>
+    </div>
+
+    <div class="diagnostic-hero__actions">
+      <button type="button" class="action-button action-button--secondary" (click)="goBack()">
+        Retour aux raids
+      </button>
+      <button type="button" class="action-button action-button--secondary" [disabled]="isLoading" (click)="refresh()">
+        Rafraichir
+      </button>
+      <button type="button" class="action-button" [disabled]="isRescanning" (click)="rescanRaid()">
+        {{ isRescanning ? 'Rescan...' : 'Rescanner ce raid' }}
+      </button>
+    </div>
+  </div>
+
+  <section class="panel panel--empty" *ngIf="isLoading">
+    <span class="panel__eyebrow">Chargement</span>
+    <h2>Preparation du diagnostic</h2>
+    <p>On compare la source stockee, la source resolue et les snapshots d'inscrits.</p>
+  </section>
+
+  <section class="panel panel--empty panel--danger" *ngIf="!isLoading && errorMessage">
+    <span class="panel__eyebrow">Erreur</span>
+    <h2>Le diagnostic n'a pas pu etre charge</h2>
+    <p>{{ errorMessage }}</p>
+  </section>
+
+  <ng-container *ngIf="!isLoading && diagnostic">
+    <section class="panel panel--subtle" *ngIf="feedbackMessage">
+      <p class="feedback">{{ feedbackMessage }}</p>
+    </section>
+
+    <section class="diagnostic-grid">
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Raid stocke</span>
+        <h2>{{ diagnostic.nom }}</h2>
+        <div class="meta-list">
+          <div class="meta-row"><span>Date</span><strong>{{ formatRaidDate(diagnostic.date) }}</strong></div>
+          <div class="meta-row"><span>Salon stocke</span><strong>{{ diagnostic.storedChannelId }}</strong></div>
+          <div class="meta-row"><span>Message stocke</span><strong>{{ diagnostic.storedMessageId }}</strong></div>
+          <div class="meta-row"><span>RaidHelperId</span><strong>{{ diagnostic.storedRaidHelperId || 'Aucun' }}</strong></div>
+          <div class="meta-row"><span>Message publie bot</span><strong>{{ diagnostic.publishedMessageId || 'Aucun' }}</strong></div>
+        </div>
+      </article>
+
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Resolution</span>
+        <h2>{{ diagnostic.sourceChanged ? 'Source corrigee' : 'Source stable' }}</h2>
+        <p class="resolution-copy">
+          {{ diagnostic.sourceChanged
+            ? 'Le backend a trouve une meilleure source que celle stockee.'
+            : 'La source resolue correspond deja au message stocke.' }}
+        </p>
+        <div class="meta-list" *ngIf="diagnostic.resolvedMessage">
+          <div class="meta-row"><span>Salon resolu</span><strong>{{ diagnostic.resolvedMessage.channelId }}</strong></div>
+          <div class="meta-row"><span>Message resolu</span><strong>{{ diagnostic.resolvedMessage.messageId }}</strong></div>
+          <div class="meta-row"><span>Inscrits live</span><strong>{{ diagnostic.liveSignups.length }}</strong></div>
+          <div class="meta-row"><span>Snapshot en base</span><strong>{{ diagnostic.snapshotSignups.length }}</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="diagnostic-grid">
+      <article class="panel panel--subtle message-panel">
+        <span class="panel__eyebrow">Message stocke</span>
+        <h2>{{ diagnostic.storedMessage?.author || 'Message indisponible' }}</h2>
+        <div class="badge-row" *ngIf="diagnostic.storedMessage">
+          <span class="info-badge" *ngFor="let badge of messageBadges(diagnostic.storedMessage)">{{ badge }}</span>
+        </div>
+        <div class="meta-list" *ngIf="diagnostic.storedMessage">
+          <div class="meta-row"><span>Date message</span><strong>{{ formatMessageDate(diagnostic.storedMessage.createdAt) }}</strong></div>
+          <div class="meta-row"><span>Nom extrait</span><strong>{{ diagnostic.storedMessage.extractedNom || 'Inconnu' }}</strong></div>
+          <div class="meta-row"><span>Date extraite</span><strong>{{ formatRaidDate(diagnostic.storedMessage.extractedDate) }}</strong></div>
+          <div class="meta-row"><span>Message lie</span><strong>{{ diagnostic.storedMessage.linkedMessageId || 'Aucun' }}</strong></div>
+        </div>
+        <p class="message-copy" *ngIf="diagnostic.storedMessage?.description">{{ diagnostic.storedMessage?.description }}</p>
+        <a *ngIf="diagnostic.storedMessage?.url" [href]="diagnostic.storedMessage?.url || '#'" target="_blank" rel="noreferrer" class="panel-link">
+          Ouvrir le message Discord
+        </a>
+      </article>
+
+      <article class="panel panel--subtle message-panel">
+        <span class="panel__eyebrow">Message resolu</span>
+        <h2>{{ diagnostic.resolvedMessage?.author || 'Message indisponible' }}</h2>
+        <div class="badge-row" *ngIf="diagnostic.resolvedMessage">
+          <span class="info-badge" *ngFor="let badge of messageBadges(diagnostic.resolvedMessage)">{{ badge }}</span>
+        </div>
+        <div class="meta-list" *ngIf="diagnostic.resolvedMessage">
+          <div class="meta-row"><span>Date message</span><strong>{{ formatMessageDate(diagnostic.resolvedMessage.createdAt) }}</strong></div>
+          <div class="meta-row"><span>Nom extrait</span><strong>{{ diagnostic.resolvedMessage.extractedNom || 'Inconnu' }}</strong></div>
+          <div class="meta-row"><span>Date extraite</span><strong>{{ formatRaidDate(diagnostic.resolvedMessage.extractedDate) }}</strong></div>
+          <div class="meta-row"><span>Message lie</span><strong>{{ diagnostic.resolvedMessage.linkedMessageId || 'Aucun' }}</strong></div>
+        </div>
+        <p class="message-copy" *ngIf="diagnostic.resolvedMessage?.description">{{ diagnostic.resolvedMessage?.description }}</p>
+        <a *ngIf="diagnostic.resolvedMessage?.url" [href]="diagnostic.resolvedMessage?.url || '#'" target="_blank" rel="noreferrer" class="panel-link">
+          Ouvrir le message Discord
+        </a>
+      </article>
+    </section>
+
+    <section class="diagnostic-grid">
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Inscrits live</span>
+        <h2>{{ diagnostic.liveSignups.length }} joueur(s)</h2>
+        <ul class="signup-list" *ngIf="diagnostic.liveSignups.length; else noLive">
+          <li *ngFor="let signup of diagnostic.liveSignups">
+            <strong>{{ signupLabel(signup) }}</strong>
+            <span>{{ signup.statutParticipation || 'TITULAIRE' }}</span>
+          </li>
+        </ul>
+        <ng-template #noLive>
+          <p class="empty-copy">Aucun inscrit live n'a pu etre extrait depuis la source resolue.</p>
+        </ng-template>
+      </article>
+
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Snapshot en base</span>
+        <h2>{{ diagnostic.snapshotSignups.length }} joueur(s)</h2>
+        <ul class="signup-list" *ngIf="diagnostic.snapshotSignups.length; else noSnapshot">
+          <li *ngFor="let signup of diagnostic.snapshotSignups">
+            <strong>{{ signupLabel(signup) }}</strong>
+            <span>{{ signup.statutParticipation || 'TITULAIRE' }}</span>
+          </li>
+        </ul>
+        <ng-template #noSnapshot>
+          <p class="empty-copy">Aucun snapshot persiste pour ce raid.</p>
+        </ng-template>
+      </article>
+    </section>
+
+    <section class="diagnostic-grid">
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Live uniquement</span>
+        <h2>{{ diagnostic.liveOnlyPlayers.length }} ecart(s)</h2>
+        <ul class="difference-list" *ngIf="diagnostic.liveOnlyPlayers.length; else noLiveOnly">
+          <li *ngFor="let player of diagnostic.liveOnlyPlayers">{{ player }}</li>
+        </ul>
+        <ng-template #noLiveOnly>
+          <p class="empty-copy">Aucun joueur supplementaire dans le live.</p>
+        </ng-template>
+      </article>
+
+      <article class="panel panel--subtle">
+        <span class="panel__eyebrow">Snapshot uniquement</span>
+        <h2>{{ diagnostic.snapshotOnlyPlayers.length }} ecart(s)</h2>
+        <ul class="difference-list" *ngIf="diagnostic.snapshotOnlyPlayers.length; else noSnapshotOnly">
+          <li *ngFor="let player of diagnostic.snapshotOnlyPlayers">{{ player }}</li>
+        </ul>
+        <ng-template #noSnapshotOnly>
+          <p class="empty-copy">Aucun joueur obsolete dans le snapshot.</p>
+        </ng-template>
+      </article>
+    </section>
+  </ng-container>
+</section>

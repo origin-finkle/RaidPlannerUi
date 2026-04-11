@@ -1,0 +1,28 @@
+<section class="login-shell">
+  <div class="login-card">
+    <img class="login-card__logo" src="assets/branding/origin-logo.png" alt="Logo Origin">
+    <span class="login-card__eyebrow">Acces securise</span>
+    <h1>Connexion Discord officier</h1>
+    <p>
+      Connecte-toi avec Discord pour acceder au planner. L'application est reservee aux membres du role
+      <strong>Officiers</strong>.
+    </p>
+
+    <div class="login-card__alert" *ngIf="denied">
+      Ton compte Discord est bien connecte, mais il ne possede pas le role Officiers sur le serveur.
+    </div>
+
+    <div class="login-card__alert" *ngIf="configMissing">
+      L'authentification Discord n'est pas encore configuree. Renseigne le client id et le client secret OAuth puis
+      redemarre l'application.
+    </div>
+
+    <div class="login-card__alert" *ngIf="oauthFailed">
+      La connexion Discord a ete interrompue. Verifie l'URL de callback dans le portail Discord puis reessaie.
+    </div>
+
+    <button type="button" class="login-card__button" (click)="login()" [disabled]="isLoading">
+      {{ isLoading ? 'Redirection...' : 'Se connecter avec Discord' }}
+    </button>
+  </div>
+</section>

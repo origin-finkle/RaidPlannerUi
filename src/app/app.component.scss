@@ -1,0 +1,235 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.app-shell {
+  position: relative;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+
+.app-shell__glow {
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+  width: 26rem;
+  height: 26rem;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.18;
+}
+
+.app-shell__glow--left {
+  top: -8rem;
+  left: -8rem;
+  background: #3b82f6;
+}
+
+.app-shell__glow--right {
+  top: 4rem;
+  right: -10rem;
+  background: #f59e0b;
+}
+
+.topbar {
+  position: sticky;
+  top: 1rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 92rem;
+  margin: 0 auto 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94), rgba(17, 24, 39, 0.82));
+  backdrop-filter: blur(18px);
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.45);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand__crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.35);
+}
+
+.brand__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand__copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand__title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  color: var(--text-strong);
+}
+
+.brand__subtitle {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.topbar__nav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.72rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 160ms ease;
+}
+
+button.nav-pill {
+  background: transparent;
+}
+
+.nav-pill:hover,
+.nav-pill.is-active {
+  color: var(--text-strong);
+  border-color: rgba(96, 165, 250, 0.28);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(37, 99, 235, 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.nav-pill--ghost {
+  border-color: rgba(148, 163, 184, 0.14);
+  color: var(--text-muted);
+}
+
+.app-main {
+  position: relative;
+  z-index: 1;
+  max-width: 92rem;
+  margin: 0 auto;
+}
+
+.app-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  max-width: 92rem;
+  margin: 2rem auto 0;
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: var(--text-muted);
+}
+
+.app-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.app-footer__logo {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.35);
+}
+
+.app-footer__copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-footer__title {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.app-footer__subtitle {
+  font-size: 0.9rem;
+}
+
+.app-footer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.footer-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.48rem 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.38);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .brand__subtitle {
+    display: none;
+  }
+
+  .topbar__nav {
+    width: 100%;
+  }
+
+  .nav-pill {
+    flex: 1 1 0;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-footer__meta {
+    justify-content: flex-start;
+  }
+}

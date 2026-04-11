@@ -1,39 +1,533 @@
-<div class="p-4">
-  <!-- Sélecteur de jour -->
-  <div class="flex gap-4 mb-6">
-    <button
-      *ngFor="let day of groupedRaids"
-      (click)="selectDay(day)"
-      [class.bg-blue-600]="day === selectedDay"
-      class="px-3 py-1 rounded bg-gray-700 text-white hover:bg-blue-500"
-    >
-      {{ formatDateLabel(day.date) }}
-    </button>
+<section class="raids-page">
+  <div class="raids-hero">
+    <div class="raids-hero__copy">
+      <span class="eyebrow">Pilotage du roster</span>
+      <h1>Compose les raids de la semaine en un coup d'oeil</h1>
+      <p>
+        Choisis un soir, ajuste les groupes et garde la rotation sous controle.
+      </p>
+    </div>
+
+    <div class="raids-stats">
+      <div class="stat-card">
+        <span class="stat-card__label">Jours affiches</span>
+        <strong>{{ groupedRaids.length }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Raids disponibles</span>
+        <strong>{{ totalRaidCount }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Joueurs sur le raid</span>
+        <strong>{{ totalPlayerCount }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="stat-card__label">Places assignees</span>
+        <strong>{{ totalAssignedCount }}/10</strong>
+      </div>
+    </div>
   </div>
 
-  <!-- Sélecteur de raid dans la journée -->
-  <div class="mb-4 flex gap-2">
-    <button
-      *ngFor="let raid of selectedDay?.raids"
-      (click)="onRaidChange(raid)"
-      class="px-4 py-2 rounded-md font-medium transition duration-200"
-      [ngClass]="{
-      'bg-blue-600 text-white font-bold ring-2 ring-blue-300 shadow-lg scale-105': selectedRaid?.id === raid.id,
-      'bg-gray-700 text-gray-200': selectedRaid?.id !== raid.id
-    }"
-    >
-      Raid {{ formatRaidDate(raid.heure) }}
-    </button>
+  <div class="raids-toolbar" *ngIf="groupedRaids.length; else emptyState">
+    <div class="panel panel--subtle">
+      <div class="panel__header">
+        <div>
+          <span class="panel__eyebrow">Cycle du reset</span>
+          <h2>Navigation par jour</h2>
+        </div>
+        <div class="panel__actions">
+          <span class="panel__meta" *ngIf="selectedWeekLabel">Semaine active: {{ selectedWeekLabel }}</span>
+          <div class="week-toggle">
+            <button
+              type="button"
+              class="week-toggle__button"
+              [class.is-active]="selectedWeekView === 'current'"
+              (click)="selectWeekView('current')"
+            >
+              Semaine en cours
+            </button>
+            <button
+              type="button"
+              class="week-toggle__button"
+              [class.is-active]="selectedWeekView === 'next'"
+              (click)="selectWeekView('next')"
+            >
+              Semaine suivante
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="week-board">
+        <article
+          *ngFor="let day of weekBoardDays"
+          class="week-column"
+          [class.is-selected]="day.isSelected"
+        >
+          <div class="week-column__header">
+            <span class="week-column__weekday">{{ formatWeekdayShort(day.date) }}</span>
+            <strong>{{ formatDayChipNumber(day.date) }}</strong>
+            <span class="week-column__count">{{ day.raids.length }} raid<span *ngIf="day.raids.length > 1">s</span></span>
+          </div>
+
+          <div class="week-column__body" *ngIf="day.raids.length; else emptyWeekDay">
+            <button
+              *ngFor="let raid of day.raids"
+              type="button"
+              class="week-raid-card"
+              [class.is-active]="isRaidSelected(raid)"
+              (click)="selectRaidFromWeekBoard(day.date, raid)"
+            >
+              <div class="week-raid-card__top">
+                <strong>{{ raid.nom }}</strong>
+                <span [ngClass]="raidStatusClass(raid)">{{ raidStatusBadge(raid) }}</span>
+              </div>
+              <span class="week-raid-card__time">{{ formatRaidDate(raid.heure) }}</span>
+            </button>
+          </div>
+
+          <ng-template #emptyWeekDay>
+            <div class="week-column__empty">Aucun raid</div>
+          </ng-template>
+        </article>
+      </div>
+    </div>
+
+    <div class="panel panel--subtle" *ngIf="selectedDay">
+      <div class="panel__header">
+        <div>
+          <span class="panel__eyebrow">Selection</span>
+          <h2>{{ formatDateLabel(selectedDay.date) }}</h2>
+        </div>
+        <div class="panel__actions">
+          <span class="panel__meta">{{ selectedDay.raids.length }} raid<span *ngIf="selectedDay.raids.length > 1">s</span></span>
+          <button
+            type="button"
+            class="action-button action-button--secondary"
+            [disabled]="!selectedRaid || isPreviewingAutoCompose"
+            (click)="previewAutoComposeSelectedWeek()"
+          >
+            {{ isPreviewingAutoCompose ? 'Analyse...' : 'Previsualiser la semaine' }}
+          </button>
+          <button
+            type="button"
+            class="action-button"
+            [disabled]="!selectedRaid || isAutoComposing"
+            (click)="autoComposeSelectedWeek()"
+          >
+            {{ isAutoComposing ? 'Generation...' : 'Generer la semaine' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="raid-chip-row">
+        <button
+          *ngFor="let raid of selectedDay.raids"
+          type="button"
+          (click)="onRaidChange(raid)"
+          class="raid-chip"
+          [class.is-active]="isRaidSelected(raid)"
+        >
+          <span class="raid-chip__title">{{ raid.nom }}</span>
+          <span class="raid-chip__time">{{ formatRaidDate(raid.heure) }}</span>
+        </button>
+      </div>
+
+      <div class="operational-note" *ngIf="selectedRaid">
+        <span class="panel__eyebrow">Statut de composition</span>
+        <p>
+          Statut:
+          <strong>{{ compositionStatusLabel(selectedRaid.compositionStatus) }}</strong>
+          <span *ngIf="selectedRaid.compositionLocked"> - verrouillee</span>
+          <span *ngIf="selectedRaid.lastPublishedAt"> - derniere publication {{ formatRaidDate(selectedRaid.lastPublishedAt) }}</span>
+        </p>
+        <div class="panel__actions">
+          <button type="button" class="action-button action-button--secondary" [disabled]="isUpdatingCompositionState" (click)="markSelectedRaidDraft()">
+            Passer en brouillon
+          </button>
+          <button type="button" class="action-button action-button--secondary" [disabled]="isUpdatingCompositionState" (click)="markSelectedRaidReady()">
+            Marquer comme prete
+          </button>
+          <button type="button" class="action-button" [disabled]="isUpdatingCompositionState" (click)="toggleSelectedRaidLock()">
+            {{ selectedRaid.compositionLocked ? 'Deverrouiller' : 'Verrouiller' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Composant de composition -->
-  <app-raid-composition
-    *ngIf="selectedRaid"
-    [raidId]="selectedRaid.id"
-    [joueurs]="selectedRaid.joueurDTOList || []"
-    [group1FromRaid]="selectedRaid.group1 || []"
-    [group2FromRaid]="selectedRaid.group2 || []"
-    [usedCharacters]="getUsedCharactersForSelectedDay()"
-    (compositionChanged)="onCompositionChanged($event)"
-  ></app-raid-composition>
-</div>
+  <div class="raid-workbench" *ngIf="selectedRaid">
+    <div class="raid-workbench__main">
+      <div class="composition-shell">
+        <app-raid-composition
+          [raidId]="selectedRaid.id"
+          [joueurs]="selectedRaid.joueurDTOList || []"
+          [group1FromRaid]="selectedRaid.group1 || []"
+          [group2FromRaid]="selectedRaid.group2 || []"
+          [usedCharacters]="getUsedCharactersForSelectedDay()"
+          [compositionLocked]="selectedRaid.compositionLocked"
+          [publishLabel]="publishActionLabel"
+          [publishHint]="publishActionHint"
+          [publishTone]="publicationTone"
+          (compositionChanged)="onCompositionChanged($event)"
+        ></app-raid-composition>
+      </div>
+    </div>
+
+    <aside class="raid-workbench__aside">
+      <div class="panel panel--subtle pilot-panel" [class.is-collapsed]="!isPilotPanelExpanded">
+        <div class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Pilotage du raid</span>
+            <h2>Vue compacte</h2>
+          </div>
+          <div class="panel__actions">
+            <button type="button" class="action-button action-button--secondary action-button--compact" (click)="togglePilotPanel()">
+              {{ pilotPanelToggleLabel() }}
+            </button>
+          </div>
+        </div>
+
+        <div class="pilot-summary-grid">
+          <article [ngClass]="signalCardClass(validationSummary?.level || 'neutral')">
+            <span class="signal-card__eyebrow">Validation</span>
+            <strong>{{ validationSummary ? validationTitle(validationSummary.level) : 'Sans controle' }}</strong>
+            <p *ngIf="validationSummary">{{ validationSummary.assignedCount }}/{{ validationSummary.raidSize }} places</p>
+            <p *ngIf="!validationSummary">Les controles apparaitront ici.</p>
+          </article>
+
+          <article [ngClass]="signalCardClass(confirmationTone)">
+            <span class="signal-card__eyebrow">Confirmations</span>
+            <strong>{{ confirmationSummary ? confirmationSummary.completionRate + '%' : 'Sans donnees' }}</strong>
+            <p *ngIf="confirmationSummary">{{ confirmationSummary.pendingCount }} en attente</p>
+            <p *ngIf="!confirmationSummary">Les retours apparaitront ici.</p>
+          </article>
+
+          <article [ngClass]="signalCardClass(publicationTone)">
+            <span class="signal-card__eyebrow">Publication</span>
+            <strong>{{ publishActionLabel }}</strong>
+            <p *ngIf="selectedRaid.lastPublishedAt">Derniere mise a jour {{ formatRaidDate(selectedRaid.lastPublishedAt) }}</p>
+            <p *ngIf="!selectedRaid.lastPublishedAt">{{ publishActionHint }}</p>
+          </article>
+        </div>
+
+        <div class="pilot-stack" *ngIf="isPilotPanelExpanded">
+          <div class="auto-compose-feedback" *ngIf="autoComposeMessage || autoComposeWarnings.length">
+            <p class="auto-compose-feedback__message" *ngIf="autoComposeMessage">{{ autoComposeMessage }}</p>
+            <p class="auto-compose-feedback__warning" *ngFor="let warning of autoComposeWarnings">{{ warning }}</p>
+          </div>
+
+          <details class="fold-card" [open]="(validationSummary?.level || 'neutral') !== 'success'">
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Validation</span>
+                <strong>Points a verifier</strong>
+              </div>
+              <span class="fold-card__meta">{{ toneLabel(validationSummary?.level || 'neutral') }}</span>
+            </summary>
+
+            <div class="preview-shell" *ngIf="validationSummary as validation">
+              <div class="auto-compose-feedback" *ngIf="validation.level === 'success'">
+                <p class="auto-compose-feedback__message">La compo respecte les controles de base avant publication.</p>
+              </div>
+
+              <div class="auto-compose-feedback" *ngIf="validation.issues.length">
+                <p class="auto-compose-feedback__warning" *ngFor="let issue of validation.issues">{{ issue }}</p>
+              </div>
+            </div>
+          </details>
+
+          <details class="fold-card">
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Regles auto-compose</span>
+                <strong>Parametres</strong>
+              </div>
+              <span class="fold-card__meta">
+                {{ autoComposeConfig.maxRaids }} raid(s) - {{ autoComposeConfig.targetTanks }}T / {{ autoComposeConfig.targetHeals }}H
+              </span>
+            </summary>
+
+            <div class="auto-compose-config">
+              <div class="auto-compose-config__header">
+                <p>Definis la structure cible et les priorites de selection.</p>
+                <p *ngIf="isLoadingDefaultRules">Chargement des regles...</p>
+              </div>
+
+              <div class="panel__actions" *ngIf="templates.length">
+                <label class="config-field" style="min-width: 18rem;">
+                  <span>Template</span>
+                  <select [(ngModel)]="selectedTemplateId">
+                    <option [ngValue]="null">Aucun</option>
+                    <option *ngFor="let template of templates" [ngValue]="template.id">{{ template.nom }}</option>
+                  </select>
+                </label>
+                <button type="button" class="action-button action-button--secondary" [disabled]="!selectedTemplateId" (click)="applySelectedTemplate()">
+                  Appliquer
+                </button>
+              </div>
+
+              <div class="auto-compose-config__grid">
+                <label class="config-field">
+                  <span>Raids a generer</span>
+                  <input type="number" min="1" max="4" [(ngModel)]="autoComposeConfig.maxRaids">
+                </label>
+                <label class="config-field">
+                  <span>Tanks cibles</span>
+                  <input type="number" min="0" max="3" [(ngModel)]="autoComposeConfig.targetTanks">
+                </label>
+                <label class="config-field">
+                  <span>Heals cibles</span>
+                  <input type="number" min="0" max="4" [(ngModel)]="autoComposeConfig.targetHeals">
+                </label>
+              </div>
+
+              <div class="auto-compose-config__toggles">
+                <label class="config-toggle">
+                  <input type="checkbox" [(ngModel)]="autoComposeConfig.preferMains">
+                  <span>Privilegier les mains</span>
+                </label>
+                <label class="config-toggle">
+                  <input type="checkbox" [(ngModel)]="autoComposeConfig.balanceAcrossRaids">
+                  <span>Equilibrer les joueurs sur les deux soirs</span>
+                </label>
+                <label class="config-toggle">
+                  <input type="checkbox" [(ngModel)]="autoComposeConfig.prioritizeBuffCoverage">
+                  <span>Couvrir un maximum de buffs</span>
+                </label>
+                <label class="config-toggle">
+                  <input type="checkbox" [(ngModel)]="autoComposeConfig.huntersFillMissingBuffs">
+                  <span>Compter les chasseurs pour fill les buffs manquants</span>
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="fold-card" *ngIf="selectedRaid && (confirmationSummary || isConfirmationLoading || confirmationErrorMessage)">
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Confirmations</span>
+                <strong>Suivi</strong>
+              </div>
+              <span class="fold-card__meta" *ngIf="confirmationSummary">
+                {{ confirmationSummary.confirmedCount }} confirmes - {{ confirmationSummary.pendingCount }} en attente
+              </span>
+            </summary>
+
+            <div class="preview-shell">
+              <div class="diagnostic-empty" *ngIf="isConfirmationLoading">Chargement des confirmations...</div>
+              <div class="auto-compose-feedback" *ngIf="confirmationErrorMessage">
+                <p class="auto-compose-feedback__warning">{{ confirmationErrorMessage }}</p>
+              </div>
+
+              <div class="preview-grid" *ngIf="confirmationSummary && !isConfirmationLoading">
+                <article class="preview-card">
+                  <h3>Avancement</h3>
+                  <span class="preview-card__meta">{{ confirmationSummary.completionRate }}% de reponse - {{ confirmationSummary.totalPlayers }} joueur(s) dans la compo</span>
+                  <div class="pill-row">
+                    <span class="player-pill">Confirmes: {{ confirmationSummary.confirmedCount }}</span>
+                    <span class="player-pill">Refus: {{ confirmationSummary.cancelledCount }}</span>
+                    <span class="player-pill">En attente: {{ confirmationSummary.pendingCount }}</span>
+                  </div>
+                </article>
+
+                <article class="preview-card">
+                  <h3>Non-repondants</h3>
+                  <ul *ngIf="confirmationSummary.pendingPlayers.length; else noPendingConfirmations">
+                    <li *ngFor="let player of confirmationSummary.pendingPlayers">
+                      {{ player.pseudoIhm || player.serverPseudo }} - {{ player.personnageNom }} - {{ player.classe }} {{ player.specialisation }}
+                    </li>
+                  </ul>
+                  <ng-template #noPendingConfirmations>
+                    <p class="preview-card__meta">Tout le monde a repondu sur la compo actuelle.</p>
+                  </ng-template>
+                </article>
+              </div>
+            </div>
+          </details>
+
+          <details class="fold-card" *ngIf="selectedRaid && (benchRecommendations || isBenchLoading || benchErrorMessage)" [open]="!!benchRecommendations?.warnings?.length">
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Bench manager</span>
+                <strong>Rotation</strong>
+              </div>
+              <span class="fold-card__meta" *ngIf="benchRecommendations">
+                {{ benchRecommendations.benchCandidates.length }} bench - {{ benchRecommendations.reserveCandidates.length }} remplacant(s)
+              </span>
+            </summary>
+
+            <div class="preview-shell">
+              <div class="diagnostic-empty" *ngIf="isBenchLoading">Calcul des suggestions de bench...</div>
+              <div class="auto-compose-feedback" *ngIf="benchErrorMessage">
+                <p class="auto-compose-feedback__warning">{{ benchErrorMessage }}</p>
+              </div>
+
+              <div class="auto-compose-feedback" *ngIf="benchRecommendations?.warnings?.length">
+                <p class="auto-compose-feedback__warning" *ngFor="let warning of benchRecommendations?.warnings || []">{{ warning }}</p>
+              </div>
+
+              <div class="preview-grid" *ngIf="benchRecommendations && !isBenchLoading">
+                <article class="preview-card">
+                  <h3>Candidats bench</h3>
+                  <span class="preview-card__meta">{{ benchRecommendations.benchCandidates.length }} suggestion(s)</span>
+                  <ul *ngIf="benchRecommendations.benchCandidates.length; else noBenchCandidates">
+                    <li *ngFor="let player of benchRecommendations.benchCandidates | slice:0:5">
+                      {{ player.pseudoIhm || player.serverPseudo }} - {{ player.personnageNom }} - score {{ player.fairnessScore }}
+                      <span *ngIf="player.reasons?.length"> - {{ player.reasons.join(', ') }}</span>
+                    </li>
+                  </ul>
+                  <ng-template #noBenchCandidates>
+                    <p class="preview-card__meta">Aucun bench pertinent tant que la compo reste vide.</p>
+                  </ng-template>
+                </article>
+
+                <article class="preview-card">
+                  <h3>Remplacants conseilles</h3>
+                  <span class="preview-card__meta">{{ benchRecommendations.reserveCandidates.length }} option(s)</span>
+                  <ul *ngIf="benchRecommendations.reserveCandidates.length; else noReserveCandidates">
+                    <li *ngFor="let player of benchRecommendations.reserveCandidates | slice:0:5">
+                      {{ player.pseudoIhm || player.serverPseudo }} - {{ player.personnageNom }} - {{ player.signupStatus }} - score {{ player.fairnessScore }}
+                      <span *ngIf="player.reasons?.length"> - {{ player.reasons.join(', ') }}</span>
+                    </li>
+                  </ul>
+                  <ng-template #noReserveCandidates>
+                    <p class="preview-card__meta">Aucun remplacant propre n'est disponible dans les inscrits actuels.</p>
+                  </ng-template>
+                </article>
+              </div>
+            </div>
+          </details>
+
+          <details class="fold-card" *ngIf="selectedRaid && (publicationComparison || isComparisonLoading || comparisonErrorMessage)">
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Comparaison publication</span>
+                <strong>Derniere version</strong>
+              </div>
+              <span class="fold-card__meta" *ngIf="publicationComparison?.hasPublishedSnapshot; else noPublishSnapshotMeta">
+                +{{ publicationComparison?.currentOnlyPlayers?.length || 0 }} / -{{ publicationComparison?.publishedOnlyPlayers?.length || 0 }}
+              </span>
+              <ng-template #noPublishSnapshotMeta>
+                <span class="fold-card__meta">Aucune reference</span>
+              </ng-template>
+            </summary>
+
+            <div class="preview-shell">
+              <div class="diagnostic-empty" *ngIf="isComparisonLoading">Chargement de la comparaison...</div>
+              <div class="auto-compose-feedback" *ngIf="comparisonErrorMessage">
+                <p class="auto-compose-feedback__warning">{{ comparisonErrorMessage }}</p>
+              </div>
+              <div class="operational-note operational-note--compact" *ngIf="publicationComparison && !publicationComparison.hasPublishedSnapshot && !isComparisonLoading">
+                <span class="panel__eyebrow">Aucune reference publiee</span>
+                <p>Ce raid n'a pas encore de snapshot de publication. Publie une compo pour activer le comparateur.</p>
+              </div>
+
+              <div class="preview-grid" *ngIf="publicationComparison && publicationComparison.hasPublishedSnapshot && !isComparisonLoading">
+                <article class="preview-card">
+                  <h3>Compo actuelle</h3>
+                  <span class="preview-card__meta">{{ totalAssignedCount }}/10 assignes</span>
+
+                  <div class="preview-card__columns">
+                    <div>
+                      <h4>Groupe 1</h4>
+                      <ul>
+                        <li *ngFor="let personnage of publicationComparison.currentGroup1">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Groupe 2</h4>
+                      <ul>
+                        <li *ngFor="let personnage of publicationComparison.currentGroup2">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="preview-card">
+                  <h3>Derniere publication</h3>
+                  <span class="preview-card__meta">{{ formatRaidDate(publicationComparison.lastPublishedAt!) }}</span>
+
+                  <div class="preview-card__columns">
+                    <div>
+                      <h4>Groupe 1</h4>
+                      <ul>
+                        <li *ngFor="let personnage of publicationComparison.publishedGroup1">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Groupe 2</h4>
+                      <ul>
+                        <li *ngFor="let personnage of publicationComparison.publishedGroup2">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <div class="auto-compose-feedback" *ngIf="publicationComparison?.hasPublishedSnapshot">
+                <p class="auto-compose-feedback__warning" *ngFor="let player of publicationComparison?.currentOnlyPlayers || []">
+                  Ajoute depuis la publication: {{ player }}
+                </p>
+                <p class="auto-compose-feedback__warning" *ngFor="let player of publicationComparison?.publishedOnlyPlayers || []">
+                  Retire depuis la publication: {{ player }}
+                </p>
+              </div>
+            </div>
+          </details>
+
+          <details class="fold-card" *ngIf="autoComposePreview.length || autoComposePreviewWarnings.length" open>
+            <summary class="fold-card__summary">
+              <div>
+                <span class="panel__eyebrow">Previsualisation</span>
+                <strong>Proposition</strong>
+              </div>
+              <span class="fold-card__meta">{{ autoComposePreview.length }} raid(s)</span>
+            </summary>
+
+            <div class="preview-shell">
+              <div class="auto-compose-feedback" *ngIf="autoComposePreviewWarnings.length">
+                <p class="auto-compose-feedback__warning" *ngFor="let warning of autoComposePreviewWarnings">{{ warning }}</p>
+              </div>
+
+              <div class="preview-grid" *ngIf="autoComposePreview.length">
+                <article class="preview-card" *ngFor="let preview of autoComposePreview">
+                  <h3>{{ preview.raidNom }}</h3>
+                  <span class="preview-card__meta">{{ formatRaidDate(preview.raidDate) }} - {{ preview.assignedCount }}/10</span>
+
+                  <div class="preview-card__columns">
+                    <div>
+                      <h4>Groupe 1</h4>
+                      <ul>
+                        <li *ngFor="let personnage of preview.group1">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Groupe 2</h4>
+                      <ul>
+                        <li *ngFor="let personnage of preview.group2">{{ personnage.nom }} - {{ personnage.classe }} {{ personnage.specialisation }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </details>
+
+          <div class="operational-note operational-note--compact">
+            <span class="panel__eyebrow">Administration</span>
+            <p>Les diagnostics, rappels et tests sont regroupes dans l'espace officiers.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<ng-template #emptyState>
+  <section class="panel panel--empty">
+    <span class="panel__eyebrow">Aucun raid sur cette semaine</span>
+    <h2>Aucun raid pour cette vue</h2>
+    <p>Change de semaine ou relance l'import Discord pour recuperer les prochains raids.</p>
+  </section>
+</ng-template>

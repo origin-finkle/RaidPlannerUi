@@ -1,17 +1,54 @@
-<!-- Header fixé -->
-<header
-  class="fixed top-0 left-0 right-0 z-[1000] bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-md"
->
-  <div class="text-xl font-bold tracking-wide">
-    🛡️ WoW Raid Planner
-  </div>
-  <nav class="space-x-4">
-    <a href="/raids" class="hover:underline text-gray-200">Raids</a>
-    <a href="/admin" class="hover:underline text-gray-200">Administration</a>
-  </nav>
-</header>
+<div class="app-shell">
+  <div class="app-shell__glow app-shell__glow--left"></div>
+  <div class="app-shell__glow app-shell__glow--right"></div>
 
-<!-- Contenu principal décalé sous le header -->
-<main class="pt-24 px-6 pb-6">
-  <router-outlet></router-outlet>
-</main>
+  <header class="topbar">
+    <a class="brand" routerLink="/raids">
+      <span class="brand__crest">
+        <img class="brand__logo" src="assets/branding/origin-logo.png" alt="Logo Origin">
+      </span>
+      <span class="brand__copy">
+        <span class="brand__title">WoW Raid Planner</span>
+        <span class="brand__subtitle">Planning de roster moderne pour les soirs de raid</span>
+      </span>
+    </a>
+
+    <nav class="topbar__nav" aria-label="Navigation principale">
+      <a routerLink="/raids" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-pill">
+        Raids
+      </a>
+      <a routerLink="/admin" routerLinkActive="is-active" class="nav-pill">
+        Administration
+      </a>
+      <button
+        *ngIf="authStatus?.authenticated"
+        type="button"
+        class="nav-pill nav-pill--ghost"
+        (click)="logout()"
+      >
+        {{ authStatus?.displayName || authStatus?.username }} · Deconnexion
+      </button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="app-footer" aria-label="Informations de l'application">
+    <div class="app-footer__brand">
+      <img class="app-footer__logo" src="assets/branding/origin-logo.png" alt="Logo Origin">
+      <div class="app-footer__copy">
+        <span class="app-footer__title">Origin Raid Planner</span>
+        <span class="app-footer__subtitle">Roster, confirmations Discord et compositions pour MoP Classic.</span>
+      </div>
+    </div>
+
+    <div class="app-footer__meta">
+      <span class="footer-pill">Version {{ appVersion }}</span>
+      <span class="footer-pill">Auteur {{ author }}</span>
+      <span class="footer-pill">Reset {{ resetWindow }}</span>
+      <span class="footer-pill">Fuseau {{ timezone }}</span>
+    </div>
+  </footer>
+</div>

@@ -28,6 +28,13 @@ export class JoueurService {
     return this.http.delete<void>(`/api/personnages/${personnageId}`);
   }
 
+  mergePersonnages(joueurId: number, sourcePersonnageId: number, targetPersonnageId: number): Observable<void> {
+    return this.http.post<void>(`/api/personnages/joueurs/${joueurId}/merge`, {
+      sourcePersonnageId,
+      targetPersonnageId
+    });
+  }
+
   getJoueurById(id:number): Observable<JoueurDTO> {
     return this.http.get<JoueurDTO>(`/api/joueurs/${id}`);
 

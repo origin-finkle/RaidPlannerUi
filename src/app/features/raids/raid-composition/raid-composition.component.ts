@@ -1,18 +1,24 @@
 import {
   AfterViewInit,
+  ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter, inject,
+  EventEmitter,
   Input,
+  OnInit,
   OnChanges,
   Output,
   SimpleChanges,
-  ViewChild
+  ViewChild,
+  inject
 } from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {BuffProvider, JoueurDTO, PersonnageDTO} from '../../../core/models/raid.model';
+import { CommonModule } from '@angular/common';
+import { BuffProvider, JoueurDTO, PersonnageDTO } from '../../../core/models/raid.model';
+import { AuthService } from '../../../core/services/auth.service';
 import { RaidService } from '../../../core/services/raid.service';
+import Sortable from 'sortablejs';
 
+type BuffDefinitions = Record<string, BuffProvider[]>;
 
 @Component({
   selector: 'app-raid-composition',
@@ -21,14 +27,16 @@ import { RaidService } from '../../../core/services/raid.service';
   templateUrl: './raid-composition.component.html',
   styleUrls: ['./raid-composition.component.scss']
 })
-
-
-export class RaidCompositionComponent implements OnChanges, AfterViewInit {
+export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnInit {
   @Input() joueurs: JoueurDTO[] = [];
   @Input() group1FromRaid: PersonnageDTO[] = [];
   @Input() group2FromRaid: PersonnageDTO[] = [];
   @Input() raidId!: number;
   @Input() usedCharacters: PersonnageDTO[] = [];
+  @Input() compositionLocked = false;
+  @Input() publishLabel = 'Publier sur Discord';
+  @Input() publishHint = 'Publie la compo actuelle dans le salon du raid.';
+  @Input() publishTone: 'success' | 'warning' | 'danger' | 'neutral' = 'neutral';
 
   @Output() compositionChanged = new EventEmitter<{
     raidId: number;
@@ -40,176 +48,163 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
   group2: PersonnageDTO[] = [];
   available: PersonnageDTO[] = [];
 
-
-  private readonly RAID_BUFFS: { [buff: string]: BuffProvider[] } = {
-    'Armor': [
-      {classe: 'Chaman'}, // toute spé
-      {classe: 'Paladin'}
+  private readonly raidBuffDefinitions: BuffDefinitions = {
+    "Puissance d'attaque": [
+      { classe: 'DK' },
+      { classe: 'Chasseur' },
+      { classe: 'Guerrier' }
     ],
-    'Endu': [
-      {classe: 'Prêtre'},
-      {classe: 'Guerrier'},
-      {classe: 'Démoniste', specialisations: ['Destruction']},
-      {classe: 'Chasseur', specialisations: ['BM']}
+    'Chance de critique': [
+      { classe: 'Druide', specialisations: ['Feral', 'Gardien'] },
+      { classe: 'Mage' },
+      { classe: 'Moine', specialisations: ['Marche vent'] },
+      { classe: 'Chasseur' }
+    ],
+    'Maitrise': [
+      { classe: 'Chasseur' },
+      { classe: 'Paladin' },
+      { classe: 'Chaman' }
+    ],
+    'Hate physique': [
+      { classe: 'DK', specialisations: ['Givre', 'Impie'] },
+      { classe: 'Voleur' },
+      { classe: 'Chaman', specialisations: ['Amelioration'] },
+      { classe: 'Chasseur' }
+    ],
+    'Hate des sorts': [
+      { classe: 'Druide', specialisations: ['Equilibre'] },
+      { classe: 'Pretre', specialisations: ['Ombre'] },
+      { classe: 'Chaman' },
+      { classe: 'Chasseur' }
+    ],
+    'Puissance des sorts': [
+      { classe: 'Mage' },
+      { classe: 'Chaman' },
+      { classe: 'Demoniste' },
+      { classe: 'Chasseur' }
+    ],
+    'Endurance': [
+      { classe: 'Pretre' },
+      { classe: 'Demoniste' },
+      { classe: 'Guerrier' },
+      { classe: 'Chasseur', specialisations: ['BM'] }
     ],
     'Stats': [
-      {classe: 'Paladin'},
-      {classe: 'Druide'},
-      {classe: 'Chasseur', specialisations: ['BM']}
-    ],
-    '+6% Spell Power': [
-      {classe: 'Mage'},
-      {classe: 'Chaman'}
-    ],
-    'Intell': [
-      {classe: 'Mage'},
-      {classe: 'Démoniste', specialisations: ['Affliction']}
-    ],
-    'BL': [
-      {classe: 'Chaman'},
-      {classe: 'Mage'},
-      {classe: 'Chasseur', specialisations: ['BM']}
-    ],
-    'Hâte 5%': [
-      {classe: 'Chaman'}, // toute spé
-      {classe: 'Prêtre', specialisations: ['Ombre']},
-      {classe: 'Druide', specialisations: ['Equilibre']}
-    ],
-    'MP5': [
-      {classe: 'Paladin'},
-      {classe: 'Chaman'},
-      {classe: 'Démoniste', specialisations: ['Affliction', 'Démonologie']}
-    ],
-    'Agi et Force': [
-      {classe: 'DK'},
-      {classe: 'Chasseur'},
-      {classe: 'Chaman'},
-      {classe: 'Guerrier'}
-    ],
-    'Résistance Feu et Givre': [
-      {classe: 'Chaman'},
-      {classe: 'Paladin'}
-    ],
-    'Hâte mélée': [
-      {classe: 'Chaman'},
-      {classe: 'Chasseur', specialisations: ['Survie']},
-      {classe: 'DK', specialisations: ['Givre']}
-    ],
-    'Crit': [
-      {classe: 'Druide', specialisations: ['Feral']},
-      {classe: 'Chaman', specialisations: ['Elem']},
-      {classe: 'Guerrier', specialisations: ['Fury']},
-      {classe: 'Valeur', specialisations: ['Finesse']}
-    ],
-    'PA': [
-      {classe: 'DK', specialisations: ['Sang']},
-      {classe: 'Chasseur', specialisations: ['Précision']},
-      {classe: 'Paladin'},
-      {classe: 'Chaman', specialisations: ['Amélioration']}
-    ],
-    '3% damage': [
-      {classe: 'Paladin', specialisations: ['Rétribution']},
-      {classe: 'Chasseur', specialisations: ['BM']},
-      {classe: 'Mage', specialisations: ['Arcane']}
-    ],
-    'Replenishment': [
-      {classe: 'Druide', specialisations: ['Restauration']},
-      {classe: 'Mage', specialisations: ['Givre']},
-      {classe: 'Démoniste', specialisations: ['Destruction']},
-      {classe: 'Prêtre', specialisations: ['Ombre']},
-      {classe: 'Paladin', specialisations: ['Rétribution']}
-    ],
-    '10% spell Power': [
-      {classe: 'Démoniste', specialisations: ['Démonologie']},
-      {classe: 'Chaman', specialisations: ['Elem']}
-    ],
+      { classe: 'Druide' },
+      { classe: 'Moine' },
+      { classe: 'Paladin' },
+      { classe: 'Chasseur', specialisations: ['BM'] }
+    ]
   };
 
-  RAID_DEBUFFS = {
-    'PA': [
-      {classe: 'DK', specialisations: ['Sang']},
-      {classe: 'Druide', specialisations: ['Feral']},
-      {classe: 'Paladin', specialisations: ['Protection']},
-      {classe: 'Démoniste',},
-      {classe: 'Guerrier',}
+  private readonly raidDebuffDefinitions: BuffDefinitions = {
+    "Reduction d'armure": [
+      { classe: 'Druide' },
+      { classe: 'Voleur' },
+      { classe: 'Guerrier' },
+      { classe: 'Chasseur' }
     ],
-    'Armor': [
-      {classe: 'Guerrier'},
-      {classe: 'Druide'},
-      {classe: 'Rogue'},
-      {classe: 'Guerrier'},
+    "Reduction vitesse d'incantation": [
+      { classe: 'DK' },
+      { classe: 'Mage' },
+      { classe: 'Voleur' },
+      { classe: 'Demoniste' },
+      { classe: 'Chasseur' }
     ],
-    'Magique': [
-      {classe: 'Démoniste'},
-      {classe: 'DK', specialisations: ['Impie']},
-      {classe: 'Druide', specialisations: ['Equilibre']},
-      {classe: 'Voleur', specialisations: ['Assassinat']},
+    'Reduction de soins': [
+      { classe: 'Chasseur' },
+      { classe: 'Moine', specialisations: ['Marche vent'] },
+      { classe: 'Voleur' },
+      { classe: 'Guerrier', specialisations: ['Arme', 'Fury'] }
     ],
-    'Attack speed': [
-      {classe: 'DK'},
-      {classe: 'Druide', specialisations: ['Feral']},
-      {classe: 'Paladin', specialisations: ['Protection']},
-      {classe: 'Chaman', specialisations: ['Amélioration']},
-      {classe: 'Guerrier'},
+    'Vulnerabilite physique': [
+      { classe: 'DK', specialisations: ['Givre', 'Impie'] },
+      { classe: 'Paladin', specialisations: ['Retribution'] },
+      { classe: 'Guerrier' },
+      { classe: 'Chasseur' }
     ],
-    '5% Spell crit': [
-      {classe: 'Mage', specialisations: ['Feu']},
-      {classe: 'Démoniste', specialisations: ['Destruction']},
+    'Degats physiques reduits': [
+      { classe: 'DK', specialisations: ['Sang'] },
+      { classe: 'Druide', specialisations: ['Feral', 'Gardien'] },
+      { classe: 'Moine', specialisations: ['Maitre brasseur'] },
+      { classe: 'Paladin', specialisations: ['Protection', 'Retribution'] },
+      { classe: 'Chaman' },
+      { classe: 'Demoniste' },
+      { classe: 'Guerrier' },
+      { classe: 'Chasseur' }
     ],
-    'Saignement': [
-      {classe: 'Druide', specialisations: ['Feral']},
-      {classe: 'Voleur', specialisations: ['Finesse']},
-      {classe: 'Guerrier', specialisations: ['Arme']},
-    ],
-    'Dégâts physiques': [
-      {classe: 'DK', specialisations: ['Givre']},
-      {classe: 'Voleur', specialisations: ['Combat']},
-      {classe: 'Guerrier', specialisations: ['Arme']},
-      {classe: 'Chasseur'},
-    ],
+    'Vulnerabilite magique': [
+      { classe: 'Voleur' },
+      { classe: 'Demoniste' },
+      { classe: 'Chasseur' }
+    ]
   };
 
-  emojiMap: { [key: string]: string } = {
-    'DK-Sang': '<:dk_sang:1363215681570603170>',
-    'DK-Givre': '<:dk_givre:1363215048675299479>',
-    'DK-Impie': '<:dk_impie:1363215050155884745>',
-
-    'Druide-Feral': '<:druide_feral:1363215056023588924>',
-    'Druide-Restauration': '<:druide_restauration:1363229950353608787>',
-    'Druide-Equilibre': '<:druide_equilibre:1363215053142364221>',
-
-    'Paladin-Sacré': '<:paladin_sacre:1363215077452419254>',
-    'Paladin-Rétribution': '<:paladin_retribution:1363215074520727735>',
-    'Paladin-Protection': '<:paladin_protection:1363215984923513033>',
-
-    'Chaman-Elem': '<:chaman_elem:1363215015540166768>',
-    'Chaman-Amélio': '<:chaman_amelioration:1363214654284894429>',
-    'Chaman-Restauration': '<:chaman_restauration:1363215037757522172>',
-
-    'Guerrier-Arme': '<:guerrier_arme:1363215059429495024>',
-    'Guerrier-Fury': '<:guerrier_fury:1363215740328611991>',
-    'Guerrier-Protection': '<:guerrier_protection:1363215062927544470>',
-
-    'Voleur-Combat': '<:voleur_combat:1363215091125850224>',
-    'Voleur-Finesse': '<:voleur_finesse:1363216048442179836>',
-    'Voleur-Assassinat': '<:voleur_assassinat:1363215089427153016>',
-
-    'Chasseur-Survie': '<:chasseur_survie:1363215042094432286>',
-    'Chasseur-Précision': '<:chasseur_precision:1363215040487887061>',
-    'Chasseur-BM': '<:chasseur_bm:1363215038911090908>',
-
-    'Mage-Feu': '<:mage_feu:1363215067826360492>',
-    'Mage-Arcane': '<:mage_arcane:1363215952573104268>',
-    'Mage-Givre': '<:mage_givre:637564231239073802>',
-
-    'Démoniste-Démonologie': '<:demoniste_demonologie:1363215045768773873>',
-    'Démoniste-Affliction': '<:demoniste_affliction:1363215043453260068>',
-    'Démoniste-Destruction': '<:demoniste_destruction:1363215047337316624>',
-
-    'Prêtre-Discipline': '<:pretre_discipline:1363215080027853051>',
-    'Prêtre-Ombre': '<:pretre_ombre:1363215649018740847>',
-    'Prêtre-Sacré': '<:pretre_sacre:1363215084003917984>',
+  private readonly utilityDefinitions: BuffDefinitions = {
+    BL: [
+      { classe: 'Chaman' },
+      { classe: 'Mage' },
+      { classe: 'Chasseur', specialisations: ['BM'] }
+    ],
+    Brez: [
+      { classe: 'Druide' },
+      { classe: 'DK' },
+      { classe: 'Demoniste' },
+      { classe: 'Chasseur', specialisations: ['BM'] }
+    ]
   };
+
+  private readonly emojiMap: Record<string, string> = {
+    'dk-sang': '<:dk_sang:1363215681570603170>',
+    'dk-givre': '<:dk_givre:1363215048675299479>',
+    'dk-impie': '<:dk_impie:1363215050155884745>',
+
+    'druide-feral': '<:druide_feral:1363215056023588924>',
+    'druide-restauration': '<:druide_restauration:1363229950353608787>',
+    'druide-equilibre': '<:druide_equilibre:1363215053142364221>',
+
+    'moine-maitre brasseur': '<:Brewmaster:637564262167871489>',
+    'moine-tisse brume': '<:Mistweaver:637564262289637433>',
+    'moine-marche vent': '<:Windwalker:637564262054625281>',
+
+    'paladin-sacre': '<:paladin_sacre:1363215077452419254>',
+    'paladin-retribution': '<:paladin_retribution:1363215074520727735>',
+    'paladin-protection': '<:paladin_protection:1363215984923513033>',
+
+    'chaman-elem': '<:chaman_elem:1363215015540166768>',
+    'chaman-amelioration': '<:chaman_amelioration:1363214654284894429>',
+    'chaman-restauration': '<:chaman_restauration:1363215037757522172>',
+
+    'guerrier-arme': '<:guerrier_arme:1363215059429495024>',
+    'guerrier-fury': '<:guerrier_fury:1363215740328611991>',
+    'guerrier-protection': '<:guerrier_protection:1363215062927544470>',
+
+    'voleur-combat': '<:voleur_combat:1363215091125850224>',
+    'voleur-finesse': '<:voleur_finesse:1363216048442179836>',
+    'voleur-assassinat': '<:voleur_assassinat:1363215089427153016>',
+
+    'chasseur-survie': '<:chasseur_survie:1363215042094432286>',
+    'chasseur-precision': '<:chasseur_precision:1363215040487887061>',
+    'chasseur-bm': '<:chasseur_bm:1363215038911090908>',
+
+    'mage-feu': '<:mage_feu:1363215067826360492>',
+    'mage-arcane': '<:mage_arcane:1363215952573104268>',
+    'mage-givre': '<:mage_givre:1363215071160959178>',
+
+    'demoniste-demonologie': '<:demoniste_demonologie:1363215045768773873>',
+    'demoniste-affliction': '<:demoniste_affliction:1363215043453260068>',
+    'demoniste-destruction': '<:demoniste_destruction:1363215047337316624>',
+
+    'pretre-discipline': '<:pretre_discipline:1363215080027853051>',
+    'pretre-ombre': '<:pretre_ombre:1363215649018740847>',
+    'pretre-sacre': '<:pretre_sacre:1363215084003917984>'
+  };
+
+  private readonly raidService = inject(RaidService);
+  private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private sortableInstances: Sortable[] = [];
+  isOfficer = false;
 
   @ViewChild('group1Container') group1Container!: ElementRef;
   @ViewChild('group2Container') group2Container!: ElementRef;
@@ -217,86 +212,119 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
   @ViewChild('dpsContainer') dpsContainer!: ElementRef;
   @ViewChild('healContainer') healContainer!: ElementRef;
 
-  raidBuffList = Object.keys(this.RAID_BUFFS);
-  raidDebuffList = Object.keys(this.RAID_DEBUFFS);
-  coveredRaidBuffs: { [buff: string]: number } = {};
-  coveredRaidDebuffs: { [buff: string]: number } = {};
-  private raidService = inject(RaidService);
-
+  raidBuffList = Object.keys(this.raidBuffDefinitions);
+  raidDebuffList = Object.keys(this.raidDebuffDefinitions);
+  utilityList = Object.keys(this.utilityDefinitions);
+  coveredRaidBuffs: Record<string, number> = {};
+  coveredRaidDebuffs: Record<string, number> = {};
+  coveredUtilities: Record<string, number> = {};
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['group1FromRaid'] || changes['group2FromRaid'] || changes['joueurs']) {
+    if (changes['group1FromRaid'] || changes['group2FromRaid'] || changes['joueurs'] || changes['compositionLocked']) {
       this.group1 = [...(this.group1FromRaid || [])];
       this.group2 = [...(this.group2FromRaid || [])];
+
       const allCharacters = [...this.group1, ...this.group2];
-      this.coveredRaidBuffs = this.getBuffCoverage(this.RAID_BUFFS, allCharacters);
-      this.coveredRaidDebuffs = this.getBuffCoverage(this.RAID_DEBUFFS, allCharacters);
+      this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
+      this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
+      this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
       this.computeAvailable();
+      this.scheduleSortableRefresh();
     }
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      const containers = [
-        {ref: this.group1Container, name: 'group1'},
-        {ref: this.group2Container, name: 'group2'},
-        {ref: this.tankContainer, name: 'tanks'},
-        {ref: this.dpsContainer, name: 'dps'},
-        {ref: this.healContainer, name: 'heals'}
-      ];
-
-      for (const {ref, name} of containers) {
-        if (ref?.nativeElement) {
-          this.setupSortable(ref.nativeElement, name);
-        } else {
-          console.warn(`⚠️ ViewChild ${name} is undefined`);
-        }
-      }
+  ngOnInit(): void {
+    this.authService.authStatus$.subscribe((status) => {
+      this.isOfficer = !!status.officer;
     });
   }
 
-  private async setupSortable(container: HTMLElement, group: string): Promise<void> {
-    if (typeof window === 'undefined') return;
-    const Sortable = (await import('sortablejs')).default;
+  ngAfterViewInit(): void {
+    this.scheduleSortableRefresh();
+  }
 
-    Sortable.create(container, {
+  private setupSortable(container: HTMLElement): void {
+    if (typeof window === 'undefined' || this.compositionLocked) {
+      return;
+    }
+
+    const sortable = Sortable.create(container, {
       group: {
         name: 'shared',
-        put: (toSortable, fromSortable, dragEl, event) => {
+        put: (toSortable) => {
           const to = toSortable.el as HTMLElement;
-          if (to === this.group1Container?.nativeElement && this.group1.length >= 5) return false;
-          if (to === this.group2Container?.nativeElement && this.group2.length >= 5) return false;
+
+          if (to === this.group1Container?.nativeElement && this.group1.length >= 5) {
+            return false;
+          }
+
+          if (to === this.group2Container?.nativeElement && this.group2.length >= 5) {
+            return false;
+          }
+
           return true;
         }
       },
       animation: 150,
-      onEnd: () => {
-        this.syncGroups();
-      }
+      onEnd: () => this.syncGroups()
     });
+
+    this.sortableInstances.push(sortable);
+  }
+
+  private scheduleSortableRefresh(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    setTimeout(() => this.refreshSortables());
+  }
+
+  private refreshSortables(): void {
+    this.sortableInstances.forEach((instance) => instance.destroy());
+    this.sortableInstances = [];
+
+    if (this.compositionLocked) {
+      return;
+    }
+
+    const containers = [
+      { ref: this.group1Container, name: 'group1' },
+      { ref: this.group2Container, name: 'group2' },
+      { ref: this.tankContainer, name: 'tanks' },
+      { ref: this.dpsContainer, name: 'dps' },
+      { ref: this.healContainer, name: 'heals' }
+    ];
+
+    for (const { ref, name } of containers) {
+      if (ref?.nativeElement) {
+        this.setupSortable(ref.nativeElement);
+      } else {
+        console.warn(`ViewChild ${name} is undefined`);
+      }
+    }
   }
 
   private syncGroups(): void {
-    const group1 = this.extractCharacters(this.group1Container.nativeElement);
-    const group2 = this.extractCharacters(this.group2Container.nativeElement);
-    const allAssigned = new Set([...group1, ...group2].map(p => p.nom));
+    this.group1 = this.extractCharacters(this.group1Container.nativeElement).slice(0, 5);
+    this.group2 = this.extractCharacters(this.group2Container.nativeElement).slice(0, 5);
 
-    this.group1 = group1.slice(0, 5);
-    this.group2 = group2.slice(0, 5);
+    const allCharacters = [...this.group1, ...this.group2];
+    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
+    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
+    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
 
     this.computeAvailable();
     this.emitComposition();
   }
 
   private extractCharacters(container: HTMLElement): PersonnageDTO[] {
-    const children = Array.from(container.children);
-    return children
-      .map(child => {
+    return Array.from(container.children)
+      .map((child) => {
         const nom = child.getAttribute('data-nom');
-        if (!nom) return null;
-        return this.findCharacterByName(nom);
+        return nom ? this.findCharacterByName(nom) : null;
       })
-      .filter((p): p is PersonnageDTO => !!p); // élimine les nulls
+      .filter((personnage): personnage is PersonnageDTO => !!personnage);
   }
 
   private emitComposition(): void {
@@ -310,40 +338,33 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
   private computeAvailable(): void {
     const allCharacters = this.flattenCharacters(this.joueurs);
 
-    // 1. Personnages dont le joueur est déjà assigné à un groupe
     const assignedPseudos = new Set(
       [...this.group1, ...this.group2]
-        .map(p => this.findJoueurByPersonnage(p.nom)?.pseudo)
+        .map((personnage) => this.findJoueurByPersonnage(personnage.nom)?.pseudo)
         .filter(Boolean)
     );
 
-    // 2. Personnages déjà utilisés cette semaine
     const resetDate = this.getLastRaidResetDate();
     const lockedCharacters = new Set(
       this.usedCharacters
-        .filter(p => p.usedAt && new Date(p.usedAt) >= resetDate)
-        .map(p => p.nom)
+        .filter((personnage) => personnage.usedAt && new Date(personnage.usedAt) >= resetDate)
+        .map((personnage) => personnage.nom)
     );
 
-    // 3. On filtre
-    this.available = allCharacters.filter(p => {
-      const joueur = this.findJoueurByPersonnage(p.nom);
-      return joueur
-        && !assignedPseudos.has(joueur.pseudo)
-        && !lockedCharacters.has(p.nom);
+    this.available = allCharacters.filter((personnage) => {
+      const joueur = this.findJoueurByPersonnage(personnage.nom);
+      return !!joueur && !assignedPseudos.has(joueur.pseudo) && !lockedCharacters.has(personnage.nom);
     });
   }
 
   private flattenCharacters(joueurs: JoueurDTO[]): PersonnageDTO[] {
-    return joueurs
-      .flatMap(j => [j.personnageMain, ...(j.rerolls || [])])
-      .filter(Boolean) as PersonnageDTO[];
+    return joueurs.flatMap((joueur) => this.getDisplayCharactersForJoueur(joueur));
   }
 
   private getLastRaidResetDate(): Date {
     const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday, 3 = Wednesday
-    const diff = (currentDay + 7 - 3) % 7; // days since last Wednesday
+    const currentDay = now.getDay();
+    const diff = (currentDay + 7 - 3) % 7;
     const reset = new Date(now);
     reset.setDate(now.getDate() - diff);
     reset.setHours(0, 0, 0, 0);
@@ -351,107 +372,196 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
   }
 
   get availableTanks(): PersonnageDTO[] {
-    return this.available.filter(p => p.role?.toUpperCase() === 'TANK');
+    return this.available.filter((personnage) => personnage.role?.toUpperCase() === 'TANK');
   }
 
   get availableDps(): PersonnageDTO[] {
-    return this.available.filter(p => p.role?.toUpperCase() === 'DPS');
+    return this.available.filter((personnage) => personnage.role?.toUpperCase() === 'DPS');
   }
 
   get availableHeals(): PersonnageDTO[] {
-    return this.available.filter(p => p.role?.toUpperCase() === 'HEAL');
+    return this.available.filter((personnage) => personnage.role?.toUpperCase() === 'HEAL');
   }
 
-  trackByNom(_: number, p: PersonnageDTO): string {
-    return p.nom;
+  trackByNom(_: number, personnage: PersonnageDTO): string {
+    return personnage.nom;
   }
 
   private findJoueurByPersonnage(nom: string): JoueurDTO | undefined {
-    return this.joueurs.find(j =>
-      j.personnageMain?.nom === nom ||
-      j.rerolls?.some(r => r.nom === nom)
+    return this.joueurs.find(
+      (joueur) =>
+        joueur.personnageMain?.nom === nom || joueur.rerolls?.some((reroll) => reroll.nom === nom)
     );
   }
 
   getClasseColorHex(classe: string | undefined): string {
-    const colors: { [key: string]: string } = {
+    const colors: Record<string, string> = {
       guerrier: '#C79C6E',
       mage: '#69CCF0',
       voleur: '#FFF569',
       paladin: '#F58CBA',
-      prêtre: '#FFFFFF',
+      pretre: '#FFFFFF',
       chasseur: '#ABD473',
-      démoniste: '#9482C9',
+      demoniste: '#9482C9',
       chaman: '#0070DE',
       druide: '#FF7D0A',
-      dk: '#C41F3B',
-      chevalierdelamort: '#C41F3B' // alias
+      moine: '#00FF96',
+      dk: '#C41F3B'
     };
 
-    return colors[classe?.toLowerCase() || ''] || '#999'; // couleur par défaut
+    return colors[this.normalizeClassName(classe)] || '#999';
   }
 
   getClasseTextColor(classe: string | undefined): string {
-    const lightBgClasses = ['prêtre', 'voleur', 'chasseur']; // couleurs claires
-    const isLight = lightBgClasses.includes(classe?.toLowerCase() || '');
-    return isLight ? '#222' : '#fff'; // noir ou blanc
+    const lightBgClasses = new Set(['pretre', 'voleur', 'chasseur']);
+    return lightBgClasses.has(this.normalizeClassName(classe)) ? '#222' : '#fff';
   }
 
-  getBuffCoverage(definitions: { [buff: string]: BuffProvider[] }, characters: PersonnageDTO[]): {
-    [buff: string]: number
-  } {
-    const res: { [buff: string]: number } = {};
-    for (const buff in definitions) {
-      res[buff] = characters.filter(p => {
-        return definitions[buff].some(provider =>
-          p.classe.toLowerCase() === provider.classe.toLowerCase() &&
-          (!provider.specialisations || provider.specialisations.includes(p.specialisation || ''))
-        );
-      }).length;
+  getBuffCoverage(definitions: BuffDefinitions, characters: PersonnageDTO[]): Record<string, number> {
+    const coverage: Record<string, number> = {};
+
+    for (const buff of Object.keys(definitions)) {
+      coverage[buff] = characters.filter((character) =>
+        definitions[buff].some((provider) => this.matchesProvider(character, provider))
+      ).length;
     }
-    return res;
+
+    return coverage;
+  }
+
+  private matchesProvider(character: PersonnageDTO, provider: BuffProvider): boolean {
+    if (this.normalizeClassName(character.classe) !== this.normalizeClassName(provider.classe)) {
+      return false;
+    }
+
+    if (!provider.specialisations || provider.specialisations.length === 0) {
+      return true;
+    }
+
+    const normalizedSpec = this.normalizeSpecName(character.specialisation);
+    return provider.specialisations.some((spec) => this.normalizeSpecName(spec) === normalizedSpec);
   }
 
   getBuffClass(count: number): string {
     return count > 0 ? 'text-yellow-300 font-medium' : 'text-gray-500';
   }
 
+  getPopoverTitle(count: number | undefined): string {
+    return (count || 0) > 0 ? 'Apporte par' : 'Peut etre apporte par';
+  }
+
+  getBuffProviders(buff: string): string[] {
+    const providers = this.raidBuffDefinitions[buff] || [];
+    const activeProviders = this.getActiveProviderLabels(providers);
+    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+  }
+
+  getDebuffProviders(debuff: string): string[] {
+    const providers = this.raidDebuffDefinitions[debuff] || [];
+    const activeProviders = this.getActiveProviderLabels(providers);
+    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+  }
+
+  getUtilityProviders(utility: string): string[] {
+    const providers = this.utilityDefinitions[utility] || [];
+    const activeProviders = this.getActiveProviderLabels(providers);
+    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+  }
+
   getSpecIcon(spec: string | undefined, classe: string | undefined): string | null {
-    if (!spec || !classe) return null;
-    const file = `${classe.toLowerCase()}_${spec.toLowerCase().replace(/\s+/g, '_')}.webp`;
+    if (!spec || !classe) {
+      return null;
+    }
+
+    const file = `${this.getAssetClassName(classe)}_${this.getAssetSpecName(spec)}.webp`;
     return `/assets/spec-icons/${file}`;
   }
 
   getStatutParticipationForCharacter(nomPerso: string): string | null {
-    const joueur = this.joueurs.find(j =>
-      j.personnageMain?.nom === nomPerso ||
-      j.rerolls?.some(p => p.nom === nomPerso)
+    const joueur = this.joueurs.find(
+      (entry) =>
+        entry.personnageMain?.nom === nomPerso || entry.rerolls?.some((personnage) => personnage.nom === nomPerso)
     );
 
     return joueur?.statutParticipation ?? null;
   }
 
-  exportRaidHelperFormat(publier: boolean = false) {
+  getTentativeReasonForCharacter(nomPerso: string): string | null {
+    const joueur = this.joueurs.find(
+      (entry) =>
+        entry.personnageMain?.nom === nomPerso || entry.rerolls?.some((personnage) => personnage.nom === nomPerso)
+    );
+
+    if (!joueur || joueur.statutParticipation !== 'TENTATIVE') {
+      return null;
+    }
+
+    const reason = joueur.commentaireInscription?.trim();
+    return reason ? reason : null;
+  }
+
+  getParticipationTitle(nomPerso: string): string {
+    const status = this.getStatutParticipationForCharacter(nomPerso);
+    if (status !== 'TENTATIVE') {
+      return status === 'BENCH'
+        ? 'Participation : Bench'
+        : status === 'LATE'
+        ? 'Participation : En retard'
+        : 'Participation : Tentative';
+    }
+
+    const reason = this.isOfficer ? this.getTentativeReasonForCharacter(nomPerso) : null;
+    return reason ? `Participation : Tentative\nMotif : ${reason}` : 'Participation : Tentative';
+  }
+
+  exportRaidHelperFormat(publier = false, overrideChannelId?: string): void {
     const group1Text = this.formatGroup('Groupe 1', this.group1);
     const group2Text = this.formatGroup('Groupe 2', this.group2);
     const texte = `${group1Text}\n\n${group2Text}`;
 
-    this.raidService.exportFormattedCompo(this.raidId, texte, publier).subscribe(() => {
-      console.log(texte)
-      alert('✅ Composition envoyée au back et prête à publier sur Discord !');
+    this.raidService.exportFormattedCompo(this.raidId, texte, publier, overrideChannelId ?? null).subscribe(() => {
+      alert(
+        overrideChannelId
+          ? `Composition publiee sur le salon de test ${overrideChannelId}.`
+          : 'Composition envoyee au back et prete a publier sur Discord.'
+      );
     });
+  }
+
+  get publishToneClass(): string {
+    return `composition-toolbar__status--${this.publishTone}`;
+  }
+
+  resetComposition(): void {
+    if (this.compositionLocked) {
+      return;
+    }
+
+    this.group1 = [];
+    this.group2 = [];
+
+    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, []);
+    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, []);
+    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, []);
+
+    this.computeAvailable();
+    this.cdr.detectChanges();
+    this.scheduleSortableRefresh();
+    this.emitComposition();
   }
 
   formatGroup(title: string, group: PersonnageDTO[]): string {
-    const lines = group.map((p, i) => {
-      const emoji = this.getEmojiTag(p.classe, p.specialisation);
-      return `${emoji} \`${i + 1}\` **${p.nom}**`;
+    const lines = group.map((personnage, index) => {
+      const emoji = this.getEmojiTag(personnage.classe, personnage.specialisation);
+      return `${emoji} \`${index + 1}\` **${personnage.nom}**`;
     });
-    return ` **${title}**\n` + lines.join('\n');
+
+    return ` **${title}**\n${lines.join('\n')}`;
   }
 
   getEmojiTag(classe: string, specialisation: string): string {
-    return this.emojiMap[`${classe}-${specialisation}`] ?? '🧍';
+    const key = `${this.normalizeClassName(classe)}-${this.normalizeSpecName(specialisation)}`;
+    return this.emojiMap[key] ?? '??';
   }
 
   private findCharacterByName(nom: string): PersonnageDTO | undefined {
@@ -461,7 +571,274 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit {
       ...this.availableDps,
       ...this.group1,
       ...this.group2
-    ].find(p => p.nom === nom);
+    ].find((personnage) => personnage.nom === nom);
   }
 
+  private getActiveProviderLabels(providers: BuffProvider[]): string[] {
+    const allCharacters = [...this.group1, ...this.group2];
+
+    const matchingCharacters = allCharacters.filter((character) =>
+      providers.some((provider) => this.matchesProvider(character, provider))
+    );
+
+    return matchingCharacters.map((character) => {
+      const classe = this.formatDisplayName(character.classe);
+      const spec = this.formatDisplayName(character.specialisation);
+      return `${character.nom} - ${classe}${spec ? ` ${spec}` : ''}`;
+    });
+  }
+
+  private getPossibleProviderLabels(providers: BuffProvider[]): string[] {
+    return providers.map((provider) => {
+      const classe = this.formatDisplayName(provider.classe);
+
+      if (!provider.specialisations || provider.specialisations.length === 0) {
+        return classe;
+      }
+
+      const specs = provider.specialisations
+        .map((specialisation) => this.formatDisplayName(specialisation))
+        .join(', ');
+
+      return `${classe} (${specs})`;
+    });
+  }
+
+  private formatDisplayName(value: string): string {
+    const normalizedClass = this.normalizeClassName(value);
+    const normalizedSpec = this.normalizeSpecName(value);
+
+    const classLabels: Record<string, string> = {
+      chaman: 'Chaman',
+      chasseur: 'Chasseur',
+      demoniste: 'Demoniste',
+      dk: 'DK',
+      druide: 'Druide',
+      guerrier: 'Guerrier',
+      mage: 'Mage',
+      moine: 'Moine',
+      paladin: 'Paladin',
+      pretre: 'Pretre',
+      voleur: 'Voleur'
+    };
+
+    const specLabels: Record<string, string> = {
+      affliction: 'Affliction',
+      amelioration: 'Amelioration',
+      arcane: 'Arcane',
+      arme: 'Arme',
+      assassinat: 'Assassinat',
+      bm: 'BM',
+      combat: 'Combat',
+      demonologie: 'Demonologie',
+      destruction: 'Destruction',
+      discipline: 'Discipline',
+      elem: 'Elem',
+      equilibre: 'Equilibre',
+      feral: 'Feral',
+      feu: 'Feu',
+      finesse: 'Finesse',
+      fury: 'Fury',
+      gardien: 'Gardien',
+      givre: 'Givre',
+      impie: 'Impie',
+      maitrebrasseur: 'Maitre brasseur',
+      'maitre brasseur': 'Maitre brasseur',
+      marchevent: 'Marche-vent',
+      'marche vent': 'Marche-vent',
+      ombre: 'Ombre',
+      precision: 'Precision',
+      protection: 'Protection',
+      retribution: 'Retribution',
+      restauration: 'Restauration',
+      sacre: 'Sacre',
+      sang: 'Sang',
+      survie: 'Survie',
+      tissebrume: 'Tisse-brume',
+      'tisse brume': 'Tisse-brume'
+    };
+
+    if (classLabels[normalizedClass]) {
+      return classLabels[normalizedClass];
+    }
+
+    if (specLabels[normalizedSpec]) {
+      return specLabels[normalizedSpec];
+    }
+
+    return value;
+  }
+
+  private normalizeClassName(value?: string): string {
+    const normalized = this.normalizeValue(value);
+
+    const classAliases: Record<string, string> = {
+      'death knight': 'dk',
+      deathknight: 'dk',
+      'chevalier de la mort': 'dk',
+      chevalierdelamort: 'dk',
+      dk: 'dk',
+      druid: 'druide',
+      druide: 'druide',
+      hunter: 'chasseur',
+      chasseur: 'chasseur',
+      mage: 'mage',
+      monk: 'moine',
+      moine: 'moine',
+      paladin: 'paladin',
+      priest: 'pretre',
+      pretre: 'pretre',
+      pratre: 'pretre',
+      rogue: 'voleur',
+      voleur: 'voleur',
+      shaman: 'chaman',
+      chaman: 'chaman',
+      warlock: 'demoniste',
+      demoniste: 'demoniste',
+      damoniste: 'demoniste',
+      warrior: 'guerrier',
+      guerrier: 'guerrier'
+    };
+
+    return classAliases[normalized] || normalized;
+  }
+
+  private normalizeSpecName(value?: string): string {
+    const normalized = this.normalizeValue(value);
+
+    const specAliases: Record<string, string> = {
+      arms: 'arme',
+      arme: 'arme',
+      assassination: 'assassinat',
+      assassinat: 'assassinat',
+      arcane: 'arcane',
+      balance: 'equilibre',
+      beastmastery: 'bm',
+      'beast mastery': 'bm',
+      bm: 'bm',
+      blood: 'sang',
+      brewmaster: 'maitre brasseur',
+      combat: 'combat',
+      demo: 'demonologie',
+      demonology: 'demonologie',
+      demonologie: 'demonologie',
+      damonologie: 'demonologie',
+      destruction: 'destruction',
+      discipline: 'discipline',
+      elemental: 'elem',
+      elem: 'elem',
+      enhancement: 'amelioration',
+      amelioration: 'amelioration',
+      amelio: 'amelioration',
+      amalioration: 'amelioration',
+      equilibre: 'equilibre',
+      feral: 'feral',
+      fire: 'feu',
+      feu: 'feu',
+      frost: 'givre',
+      fury: 'fury',
+      gardien: 'gardien',
+      guardian: 'gardien',
+      givre: 'givre',
+      holy: 'sacre',
+      impie: 'impie',
+      marksmanship: 'precision',
+      precision: 'precision',
+      pracision: 'precision',
+      'maitre brasseur': 'maitre brasseur',
+      mistweaver: 'tisse brume',
+      'tisse brume': 'tisse brume',
+      'tisse-brume': 'tisse brume',
+      ombre: 'ombre',
+      shadow: 'ombre',
+      protection: 'protection',
+      restoration: 'restauration',
+      restauration: 'restauration',
+      resto: 'restauration',
+      retribution: 'retribution',
+      retri: 'retribution',
+      ratribution: 'retribution',
+      sacre: 'sacre',
+      sacra: 'sacre',
+      subtlety: 'finesse',
+      finesse: 'finesse',
+      survie: 'survie',
+      survival: 'survie',
+      unholy: 'impie',
+      windwalker: 'marche vent',
+      'marche vent': 'marche vent',
+      'marche-vent': 'marche vent'
+    };
+
+    return specAliases[normalized] || normalized;
+  }
+
+  private normalizeValue(value?: string): string {
+    if (!value) {
+      return '';
+    }
+
+    return value
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/['`]/g, ' ')
+      .replace(/[_-]+/g, ' ')
+      .replace(/[^a-z0-9 ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private getAssetClassName(value?: string): string {
+    const normalized = this.normalizeClassName(value);
+    const assetClassNames: Record<string, string> = {
+      pretre: 'prêtre',
+      demoniste: 'démoniste'
+    };
+
+    return assetClassNames[normalized] || normalized;
+  }
+
+  private getAssetSpecName(value?: string): string {
+    const normalized = this.normalizeSpecName(value);
+    const assetSpecNames: Record<string, string> = {
+      amelioration: 'amélioration',
+      precision: 'précision',
+      demonologie: 'démonologie',
+      retribution: 'rétribution',
+      sacre: 'sacré',
+      'tisse brume': 'tisse-brume',
+      'marche vent': 'marche-vent'
+    };
+
+    return (assetSpecNames[normalized] || normalized).replace(/\s+/g, '_');
+  }
+
+  private getDisplayCharactersForJoueur(joueur: JoueurDTO): PersonnageDTO[] {
+    const characters = [joueur.personnageMain, ...(joueur.rerolls || [])].filter(Boolean) as PersonnageDTO[];
+
+    return characters.filter((candidate) => !this.isPlaceholderDuplicate(joueur, candidate, characters));
+  }
+
+  private isPlaceholderDuplicate(joueur: JoueurDTO, candidate: PersonnageDTO, allCharacters: PersonnageDTO[]): boolean {
+    if (!this.looksLikeAccountName(joueur, candidate.nom)) {
+      return false;
+    }
+
+    return allCharacters
+      .filter((other) => other.id !== candidate.id)
+      .some((other) =>
+        this.normalizeValue(other.classe) === this.normalizeValue(candidate.classe)
+        && this.normalizeValue(other.specialisation) === this.normalizeValue(candidate.specialisation)
+        && !this.looksLikeAccountName(joueur, other.nom)
+      );
+  }
+
+  private looksLikeAccountName(joueur: JoueurDTO, nom?: string): boolean {
+    const normalizedName = this.normalizeValue(nom).replace(/\s+/g, '');
+    return normalizedName === this.normalizeValue(joueur.serverPseudo).replace(/\s+/g, '')
+      || normalizedName === this.normalizeValue(joueur.pseudoIhm).replace(/\s+/g, '')
+      || normalizedName === this.normalizeValue(joueur.pseudo).replace(/\s+/g, '');
+  }
 }
