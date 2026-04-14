@@ -98,6 +98,14 @@ export class RaidService {
     return this.http.post(`/api/raids/${raidId}/signup-flow/test`, {}, { responseType: 'text' });
   }
 
+  addManualSignup(raidId: number, personnageId: number): Observable<void> {
+    return this.http.post<void>(`/api/raids/${raidId}/manual-signups`, { personnageId });
+  }
+
+  removeManualSignup(raidId: number, personnageId: number): Observable<void> {
+    return this.http.delete<void>(`/api/raids/${raidId}/manual-signups/${personnageId}`);
+  }
+
   getPlanningHealth(): Observable<PlanningHealthSummaryDTO> {
     return this.http.get<PlanningHealthSummaryDTO>('/api/raids/planning-health');
   }

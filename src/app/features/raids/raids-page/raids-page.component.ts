@@ -3,12 +3,14 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RaidService } from '../../../core/services/raid.service';
+import { JoueurService } from '../../../core/services/joueur.service';
 import {
   AutoComposePreviewRaidDTO,
   AutoComposePreviewResultDTO,
   AutoComposeWeekRequestDTO,
   AutoComposeWeekResultDTO,
   BenchRecommendationDTO,
+  JoueurDTO,
   RaidTemplateDTO,
   RaidConfirmationSummaryDTO,
   RaidCompositionStateDTO,
@@ -30,6 +32,7 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
 })
 export class RaidsPageComponent implements OnInit {
   private raidService = inject(RaidService);
+  private joueurService = inject(JoueurService);
   private platformId = inject(PLATFORM_ID);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -37,6 +40,7 @@ export class RaidsPageComponent implements OnInit {
   private initialPreferredRaidId: number | null = null;
 
   allGroupedRaids: RaidDayResponse[] = [];
+  allJoueurs: JoueurDTO[] = [];
   selectedDay: RaidDayResponse | null = null;
   selectedRaid: RaidDTO | null = null;
   isAutoComposing = false;
@@ -87,6 +91,7 @@ export class RaidsPageComponent implements OnInit {
 
     this.loadAutoComposeDefaults();
     this.loadTemplates();
+    this.loadAllJoueurs();
     this.loadRaids(this.initialPreferredDayDate, this.initialPreferredRaidId);
   }
 
@@ -227,6 +232,126 @@ export class RaidsPageComponent implements OnInit {
           this.autoComposeMessage = "La composition n'a pas pu etre enregistree.";
         }
       });
+    }
+  }
+
+  onManualSignupAdded(personnageId: number): void {
+    if (!this.selectedRaid || !personnageId) {
+      return;
+    }
+
+    const currentRaidId = this.selectedRaid.id;
+    const currentDayDate = this.selectedDay?.date ?? null;
+
+    this.raidService.addManualSignup(currentRaidId, personnageId).subscribe({
+      next: () => {
+        this.applyManualSignupLocally(personnageId);
+        this.autoComposeMessage = 'Joueur ajoute manuellement au raid.';
+        this.autoComposeWarnings = [];
+        this.loadRaids(currentDayDate, currentRaidId);
+      },
+      error: () => {
+        this.autoComposeMessage = "Impossible d'ajouter ce joueur manuellement au raid.";
+        this.autoComposeWarnings = [];
+      }
+    });
+  }
+
+  onManualSignupRemoved(personnageId: number): void {
+    if (!this.selectedRaid || !personnageId) {
+      return;
+    }
+
+    const currentRaidId = this.selectedRaid.id;
+    const currentDayDate = this.selectedDay?.date ?? null;
+
+    this.raidService.removeManualSignup(currentRaidId, personnageId).subscribe({
+      next: () => {
+        this.applyManualSignupRemovalLocally(personnageId);
+        this.autoComposeMessage = 'Ajout manuel retire du raid.';
+        this.autoComposeWarnings = [];
+        this.loadRaids(currentDayDate, currentRaidId);
+      },
+      error: () => {
+        this.autoComposeMessage = "Impossible de retirer cet ajout manuel.";
+        this.autoComposeWarnings = [];
+      }
+    });
+  }
+
+  private applyManualSignupLocally(personnageId: number): void {
+    if (!this.selectedRaid) {
+      return;
+    }
+
+    const joueur = this.allJoueurs.find((entry) =>
+      entry.personnageMain?.id === personnageId || entry.rerolls?.some((personnage) => personnage.id === personnageId)
+    );
+
+    if (!joueur) {
+      return;
+    }
+
+    const alreadyPresent = (this.selectedRaid.joueurDTOList ?? []).some((entry) => entry.id === joueur.id);
+    if (alreadyPresent) {
+      return;
+    }
+
+    this.selectedRaid = {
+      ...this.selectedRaid,
+      joueurDTOList: [
+        ...(this.selectedRaid.joueurDTOList ?? []),
+        {
+          ...joueur,
+          statutParticipation: 'TITULAIRE',
+          commentaireInscription: 'MANUAL_OFFICER_ADD'
+        }
+      ]
+    };
+
+    if (this.selectedDay) {
+      this.selectedDay = {
+        ...this.selectedDay,
+        raids: this.selectedDay.raids.map((raid) =>
+          raid.id === this.selectedRaid?.id ? this.selectedRaid! : raid
+        )
+        };
+      }
+    }
+
+  private applyManualSignupRemovalLocally(personnageId: number): void {
+    if (!this.selectedRaid) {
+      return;
+    }
+
+    const joueur = this.allJoueurs.find((entry) =>
+      entry.personnageMain?.id === personnageId || entry.rerolls?.some((personnage) => personnage.id === personnageId)
+    );
+
+    if (!joueur) {
+      return;
+    }
+
+    const characterNames = new Set(
+      [joueur.personnageMain, ...(joueur.rerolls ?? [])]
+        .filter((personnage): personnage is PersonnageDTO => !!personnage)
+        .map((personnage) => personnage.nom)
+    );
+
+    this.selectedRaid = {
+      ...this.selectedRaid,
+      joueurDTOList: (this.selectedRaid.joueurDTOList ?? []).filter((entry) => entry.id !== joueur.id),
+      group1: (this.selectedRaid.group1 ?? []).filter((personnage) => !characterNames.has(personnage.nom)),
+      group2: (this.selectedRaid.group2 ?? []).filter((personnage) => !characterNames.has(personnage.nom))
+    };
+
+    if (this.selectedDay) {
+      this.selectedDay = {
+        ...this.selectedDay,
+        raids: this.selectedDay.raids.map((raid) =>
+          raid.id === this.selectedRaid?.id ? this.selectedRaid! : raid
+        )
+      };
     }
   }
 
@@ -825,6 +950,17 @@ export class RaidsPageComponent implements OnInit {
       },
       error: () => {
         this.isLoadingTemplates = false;
+      }
+    });
+  }
+
+  private loadAllJoueurs(): void {
+    this.joueurService.getJoueurs().subscribe({
+      next: (joueurs) => {
+        this.allJoueurs = joueurs ?? [];
+      },
+      error: () => {
+        this.allJoueurs = [];
       }
     });
   }

@@ -82,6 +82,51 @@
   background-color: #1a1a1a;
 }
 
+.manual-signup-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.manual-signup-bar__copy {
+  min-width: 0;
+}
+
+.manual-signup-bar__copy strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #f8fafc;
+}
+
+.manual-signup-bar__copy p {
+  margin: 0.35rem 0 0;
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 0.88rem;
+}
+
+.manual-signup-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.manual-signup-bar__actions select {
+  min-width: 22rem;
+  max-width: 32rem;
+  padding: 0.78rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+}
+
 .composition-toolbar {
   display: flex;
   align-items: stretch;
@@ -248,6 +293,43 @@
   }
 }
 
+.signup-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.14rem 0.38rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.signup-source-badge--manual {
+  background: rgba(59, 130, 246, 0.22);
+  color: #bfdbfe;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+}
+
+.manual-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
+  font-size: 0.85rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.manual-remove-button:hover {
+  filter: brightness(1.08);
+}
+
 .buff-entry {
   position: relative;
   display: block;
@@ -317,6 +399,17 @@
 @media (max-width: 900px) {
   .composition-toolbar {
     flex-direction: column;
+  }
+
+  .manual-signup-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .manual-signup-bar__actions select {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
   }
 
   .buff-popover {

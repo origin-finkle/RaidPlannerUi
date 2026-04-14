@@ -13,6 +13,7 @@ import {
   inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { BuffProvider, JoueurDTO, PersonnageDTO } from '../../../core/models/raid.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { RaidService } from '../../../core/services/raid.service';
@@ -23,12 +24,13 @@ type BuffDefinitions = Record<string, BuffProvider[]>;
 @Component({
   selector: 'app-raid-composition',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './raid-composition.component.html',
   styleUrls: ['./raid-composition.component.scss']
 })
 export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnInit {
   @Input() joueurs: JoueurDTO[] = [];
+  @Input() allJoueurs: JoueurDTO[] = [];
   @Input() group1FromRaid: PersonnageDTO[] = [];
   @Input() group2FromRaid: PersonnageDTO[] = [];
   @Input() raidId!: number;
@@ -43,10 +45,14 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     group1: PersonnageDTO[];
     group2: PersonnageDTO[];
   }>();
+  @Output() manualSignupAdded = new EventEmitter<number>();
+  @Output() manualSignupRemoved = new EventEmitter<number>();
 
   group1: PersonnageDTO[] = [];
   group2: PersonnageDTO[] = [];
   available: PersonnageDTO[] = [];
+  selectedManualCharacterId: number | null = null;
+  private readonly manualSignupComment = 'MANUAL_OFFICER_ADD';
 
   private readonly raidBuffDefinitions: BuffDefinitions = {
     "Puissance d'attaque": [
@@ -383,15 +389,121 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     return this.available.filter((personnage) => personnage.role?.toUpperCase() === 'HEAL');
   }
 
+  get manualAddCandidates(): PersonnageDTO[] {
+    const currentRaidPlayerIds = new Set(
+      this.joueurs
+        .map((joueur) => joueur.id)
+        .filter((id): id is number => typeof id === 'number')
+    );
+
+    return this.allJoueurs
+      .filter((joueur) => joueur.raider)
+      .filter((joueur) => !currentRaidPlayerIds.has(joueur.id))
+      .flatMap((joueur) => this.getDisplayCharactersForJoueur(joueur))
+      .sort((left, right) => this.manualCandidateLabel(left).localeCompare(this.manualCandidateLabel(right), 'fr'));
+  }
+
   trackByNom(_: number, personnage: PersonnageDTO): string {
     return personnage.nom;
+  }
+
+  manualCandidateLabel(personnage: PersonnageDTO): string {
+    const joueur = this.findJoueurByCharacterAcrossRoster(personnage.nom);
+    const playerLabel = joueur?.pseudoIhm || joueur?.serverPseudo || joueur?.pseudo || 'Joueur';
+    const rerollSuffix = personnage.main ? '' : ' · Reroll';
+    return `${playerLabel} - ${personnage.nom} (${personnage.classe} ${personnage.specialisation})${rerollSuffix}`;
+  }
+
+  addManualSignup(): void {
+    if (this.compositionLocked || this.selectedManualCharacterId == null) {
+      return;
+    }
+
+    this.manualSignupAdded.emit(this.selectedManualCharacterId);
+    this.selectedManualCharacterId = null;
+  }
+
+  removeManualSignup(personnage: PersonnageDTO, event?: Event): void {
+    event?.stopPropagation();
+
+    if (this.compositionLocked || !this.isManualSignupCharacter(personnage.nom) || !personnage.id) {
+      return;
+    }
+
+    this.manualSignupRemoved.emit(personnage.id);
+  }
+
+  addCharacterToComposition(personnage: PersonnageDTO): void {
+    if (this.compositionLocked) {
+      return;
+    }
+
+    const alreadyAssigned = [...this.group1, ...this.group2].some((current) => current.nom === personnage.nom);
+    if (alreadyAssigned) {
+      return;
+    }
+
+    if (this.group1.length < 5) {
+      this.group1 = [...this.group1, personnage];
+      this.afterManualCompositionChange();
+      return;
+    }
+
+    if (this.group2.length < 5) {
+      this.group2 = [...this.group2, personnage];
+      this.afterManualCompositionChange();
+    }
+  }
+
+  removeCharacterFromComposition(personnage: PersonnageDTO): void {
+    if (this.compositionLocked) {
+      return;
+    }
+
+    const nextGroup1 = this.group1.filter((current) => current.nom !== personnage.nom);
+    const nextGroup2 = this.group2.filter((current) => current.nom !== personnage.nom);
+
+    if (nextGroup1.length === this.group1.length && nextGroup2.length === this.group2.length) {
+      return;
+    }
+
+    this.group1 = nextGroup1;
+    this.group2 = nextGroup2;
+    this.afterManualCompositionChange();
+  }
+
+  private afterManualCompositionChange(): void {
+    const allCharacters = [...this.group1, ...this.group2];
+    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
+    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
+    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
+    this.computeAvailable();
+    this.cdr.detectChanges();
+    this.scheduleSortableRefresh();
+    this.emitComposition();
   }
 
   private findJoueurByPersonnage(nom: string): JoueurDTO | undefined {
     return this.joueurs.find(
       (joueur) =>
-        joueur.personnageMain?.nom === nom || joueur.rerolls?.some((reroll) => reroll.nom === nom)
+          joueur.personnageMain?.nom === nom || joueur.rerolls?.some((reroll) => reroll.nom === nom)
     );
+  }
+
+  isManualSignupCharacter(nomPerso: string): boolean {
+    const joueur = this.findJoueurByPersonnage(nomPerso);
+    return joueur?.commentaireInscription === this.manualSignupComment;
+  }
+
+  getSignupSourceLabel(nomPerso: string): string | null {
+    return this.isManualSignupCharacter(nomPerso) ? 'Manuel' : null;
+  }
+
+  private findJoueurByCharacterAcrossRoster(nom: string): JoueurDTO | undefined {
+    return this.allJoueurs.find(
+      (joueur) =>
+        joueur.personnageMain?.nom === nom || joueur.rerolls?.some((reroll) => reroll.nom === nom)
+    ) ?? this.findJoueurByPersonnage(nom);
   }
 
   getClasseColorHex(classe: string | undefined): string {

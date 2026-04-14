@@ -162,17 +162,20 @@
         <app-raid-composition
           [raidId]="selectedRaid.id"
           [joueurs]="selectedRaid.joueurDTOList || []"
+          [allJoueurs]="allJoueurs"
           [group1FromRaid]="selectedRaid.group1 || []"
           [group2FromRaid]="selectedRaid.group2 || []"
           [usedCharacters]="getUsedCharactersForSelectedDay()"
           [compositionLocked]="selectedRaid.compositionLocked"
           [publishLabel]="publishActionLabel"
           [publishHint]="publishActionHint"
-          [publishTone]="publicationTone"
-          (compositionChanged)="onCompositionChanged($event)"
-        ></app-raid-composition>
+            [publishTone]="publicationTone"
+            (compositionChanged)="onCompositionChanged($event)"
+            (manualSignupAdded)="onManualSignupAdded($event)"
+            (manualSignupRemoved)="onManualSignupRemoved($event)"
+          ></app-raid-composition>
+        </div>
       </div>
-    </div>
 
     <aside class="raid-workbench__aside">
       <div class="panel panel--subtle pilot-panel" [class.is-collapsed]="!isPilotPanelExpanded">

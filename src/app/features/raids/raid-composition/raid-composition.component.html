@@ -8,6 +8,9 @@
         [attr.data-classe]="p.classe"
         [style.backgroundColor]="getClasseColorHex(p.classe)"
         [style.color]="getClasseTextColor(p.classe)"
+        [style.cursor]="compositionLocked ? 'default' : 'pointer'"
+        [title]="compositionLocked ? '' : 'Cliquer pour retirer de la compo'"
+        (click)="removeCharacterFromComposition(p)"
         style="width: 100%; height: 80px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;"
       >
         <div style="display: flex; align-items: center; gap: 6px;">
@@ -19,6 +22,18 @@
           />
           <span>{{ p.nom }}</span>
           <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+            {{ getSignupSourceLabel(p.nom) }}
+          </span>
+          <button
+            *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+            type="button"
+            class="manual-remove-button"
+            title="Retirer cet ajout manuel du raid"
+            (click)="removeManualSignup(p, $event)"
+          >
+            ×
+          </button>
         </div>
         <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 11px; opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           {{ getTentativeReasonForCharacter(p.nom) }}
@@ -36,6 +51,9 @@
         [attr.data-classe]="p.classe"
         [style.backgroundColor]="getClasseColorHex(p.classe)"
         [style.color]="getClasseTextColor(p.classe)"
+        [style.cursor]="compositionLocked ? 'default' : 'pointer'"
+        [title]="compositionLocked ? '' : 'Cliquer pour retirer de la compo'"
+        (click)="removeCharacterFromComposition(p)"
         style="width: 100%; height: 80px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;"
       >
         <div style="display: flex; align-items: center; gap: 6px;">
@@ -47,6 +65,18 @@
           />
           <span>{{ p.nom }}</span>
           <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+            {{ getSignupSourceLabel(p.nom) }}
+          </span>
+          <button
+            *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+            type="button"
+            class="manual-remove-button"
+            title="Retirer cet ajout manuel du raid"
+            (click)="removeManualSignup(p, $event)"
+          >
+            ×
+          </button>
         </div>
         <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 11px; opacity: 0.8; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           {{ getTentativeReasonForCharacter(p.nom) }}
@@ -85,7 +115,35 @@
 </div>
 
 <div style="background: #111; padding: 16px; border-radius: 8px;">
+  <div class="manual-signup-bar" *ngIf="manualAddCandidates.length">
+    <div class="manual-signup-bar__copy">
+      <span class="composition-toolbar__eyebrow">Ajout manuel</span>
+      <strong>Ajouter un joueur non inscrit</strong>
+      <p>Choisis un personnage du roster pour le rendre disponible sur ce raid.</p>
+    </div>
+
+    <div class="manual-signup-bar__actions">
+      <select [(ngModel)]="selectedManualCharacterId" [disabled]="compositionLocked">
+        <option [ngValue]="null">Choisir un personnage</option>
+        <option *ngFor="let candidate of manualAddCandidates; trackBy: trackByNom" [ngValue]="candidate.id">
+          {{ manualCandidateLabel(candidate) }}
+        </option>
+      </select>
+      <button
+        type="button"
+        class="composition-button composition-button--secondary"
+        [disabled]="compositionLocked || selectedManualCharacterId === null"
+        (click)="addManualSignup()"
+      >
+        Ajouter au raid
+      </button>
+    </div>
+  </div>
+
   <h3 style="color: white;">Personnages disponibles</h3>
+  <p style="margin: 0 0 12px; color: rgba(255, 255, 255, 0.7); font-size: 13px;">
+    Clic rapide : ajoute un personnage dans la compo. Clique sur un personnage deja place pour le retirer.
+  </p>
 
   <div style="margin-bottom: 16px;">
     <h4 style="color: skyblue;">Tanks</h4>
@@ -96,6 +154,9 @@
         [attr.data-classe]="p.classe"
         [style.backgroundColor]="getClasseColorHex(p.classe)"
         [style.color]="getClasseTextColor(p.classe)"
+        [style.cursor]="compositionLocked ? 'default' : 'pointer'"
+        [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
+        (click)="addCharacterToComposition(p)"
         style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
       >
         <img
@@ -106,9 +167,21 @@
         />
         <span>{{ p.nom }}</span>
         <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+          {{ getSignupSourceLabel(p.nom) }}
+        </span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <button
+          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+          type="button"
+          class="manual-remove-button"
+          title="Retirer cet ajout manuel du raid"
+          (click)="removeManualSignup(p, $event)"
+        >
+          ×
+        </button>
         <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           {{ getTentativeReasonForCharacter(p.nom) }}
         </div>
@@ -125,6 +198,9 @@
         [attr.data-classe]="p.classe"
         [style.backgroundColor]="getClasseColorHex(p.classe)"
         [style.color]="getClasseTextColor(p.classe)"
+        [style.cursor]="compositionLocked ? 'default' : 'pointer'"
+        [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
+        (click)="addCharacterToComposition(p)"
         style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
       >
         <img
@@ -135,9 +211,21 @@
         />
         <span>{{ p.nom }}</span>
         <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+          {{ getSignupSourceLabel(p.nom) }}
+        </span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <button
+          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+          type="button"
+          class="manual-remove-button"
+          title="Retirer cet ajout manuel du raid"
+          (click)="removeManualSignup(p, $event)"
+        >
+          ×
+        </button>
         <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           {{ getTentativeReasonForCharacter(p.nom) }}
         </div>
@@ -154,6 +242,9 @@
         [attr.data-classe]="p.classe"
         [style.backgroundColor]="getClasseColorHex(p.classe)"
         [style.color]="getClasseTextColor(p.classe)"
+        [style.cursor]="compositionLocked ? 'default' : 'pointer'"
+        [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
+        (click)="addCharacterToComposition(p)"
         style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
       >
         <img
@@ -164,9 +255,21 @@
         />
         <span>{{ p.nom }}</span>
         <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+          {{ getSignupSourceLabel(p.nom) }}
+        </span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
         <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <button
+          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+          type="button"
+          class="manual-remove-button"
+          title="Retirer cet ajout manuel du raid"
+          (click)="removeManualSignup(p, $event)"
+        >
+          ×
+        </button>
         <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
           {{ getTentativeReasonForCharacter(p.nom) }}
         </div>
