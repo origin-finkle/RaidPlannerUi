@@ -169,9 +169,9 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     'druide-restauration': '<:druide_restauration:1363229950353608787>',
     'druide-equilibre': '<:druide_equilibre:1363215053142364221>',
 
-    'moine-maitre brasseur': '<:Brewmaster:637564262167871489>',
-    'moine-tisse brume': '<:Mistweaver:637564262289637433>',
-    'moine-marche vent': '<:Windwalker:637564262054625281>',
+      'moine-maitre brasseur': '<:moine_maitre_brasseur:1493745119952638103>',
+      'moine-tisse brume': '<:moine_tissebrume:1493745192241598595>',
+      'moine-marche vent': '<:moine_marchevent:1493745166878638180>',
 
     'paladin-sacre': '<:paladin_sacre:1363215077452419254>',
     'paladin-retribution': '<:paladin_retribution:1363215074520727735>',
