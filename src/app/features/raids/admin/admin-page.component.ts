@@ -149,6 +149,8 @@ export class AdminPageComponent implements OnInit {
   mergeTargetPersonnageId: number | null = null;
   isMergingPersonnages = false;
   mergeFeedback: string | null = null;
+  isAddingPersonnage = false;
+  characterFeedback: string | null = null;
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -751,6 +753,7 @@ export class AdminPageComponent implements OnInit {
       }
 
       this.joueurEnCours = loadedJoueur;
+      this.characterFeedback = null;
       this.applyLoadedJoueur(loadedJoueur);
     });
   }
@@ -758,6 +761,8 @@ export class AdminPageComponent implements OnInit {
   fermerDialog(): void {
     this.joueurEnCours = null;
     this.personnagesDuJoueur = [];
+    this.characterFeedback = null;
+    this.isAddingPersonnage = false;
     this.resetMergeState();
   }
 
@@ -780,23 +785,43 @@ export class AdminPageComponent implements OnInit {
   }
 
   ajouterPersonnage(): void {
-    if (!this.joueurEnCours || !this.nouveauPersonnage.nom?.trim()) {
+    if (!this.joueurEnCours || this.isAddingPersonnage) {
+      return;
+    }
+
+    if (!this.nouveauPersonnage.nom?.trim()
+      || !this.nouveauPersonnage.classe?.trim()
+      || !this.nouveauPersonnage.specialisation?.trim()
+      || !this.nouveauPersonnage.role?.trim()) {
+      this.characterFeedback = 'Complete le nom, la classe, la specialisation et le role avant de valider.';
       return;
     }
 
     const personnage: PersonnageDTO = {
       id: 0,
-      nom: this.nouveauPersonnage.nom!,
-      classe: this.nouveauPersonnage.classe!,
-      specialisation: this.nouveauPersonnage.specialisation!,
-      role: this.nouveauPersonnage.role!,
+      nom: this.nouveauPersonnage.nom.trim(),
+      classe: this.nouveauPersonnage.classe.trim(),
+      specialisation: this.nouveauPersonnage.specialisation.trim(),
+      role: this.nouveauPersonnage.role.trim(),
       pseudo: this.joueurEnCours.pseudo,
       main: this.nouveauPersonnage.main ?? false
     };
 
-    this.joueurService.addPersonnage(this.joueurEnCours.id, personnage).subscribe(() => {
-      this.personnagesDuJoueur.push(personnage);
-      this.resetNouveauPersonnage();
+    this.isAddingPersonnage = true;
+    this.characterFeedback = null;
+
+    this.joueurService.addPersonnage(this.joueurEnCours.id, personnage).subscribe({
+      next: () => {
+        this.isAddingPersonnage = false;
+        this.characterFeedback = `Personnage ${personnage.nom} ajoute.`;
+        this.resetNouveauPersonnage();
+        this.reloadCurrentJoueur();
+        this.loadJoueurs();
+      },
+      error: (error: HttpErrorResponse) => {
+        this.isAddingPersonnage = false;
+        this.characterFeedback = this.extractErrorMessage(error, "Impossible d'ajouter ce personnage.");
+      }
     });
   }
 

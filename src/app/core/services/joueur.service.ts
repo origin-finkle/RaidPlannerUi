@@ -20,8 +20,8 @@ export class JoueurService {
     return this.http.put<void>(`/api/personnages/${personnage.id}`, personnage);
   }
 
-  addPersonnage(joueurId: number, personnage: PersonnageDTO): Observable<any> {
-    return this.http.post(`/api/personnages/${joueurId}/personnages`, personnage);
+  addPersonnage(joueurId: number, personnage: PersonnageDTO): Observable<PersonnageDTO> {
+    return this.http.post<PersonnageDTO>(`/api/personnages/${joueurId}/personnages`, personnage);
   }
 
   deletePersonnage(personnageId:number): Observable<any> {

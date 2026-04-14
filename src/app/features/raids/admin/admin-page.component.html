@@ -985,7 +985,18 @@
         </label>
 
         <div class="character-form-card__actions">
-          <button type="button" (click)="ajouterPersonnage()" class="button button--primary">Ajouter</button>
+          <button
+            type="button"
+            (click)="ajouterPersonnage()"
+            class="button button--primary"
+            [disabled]="isAddingPersonnage || !nouveauPersonnage.nom?.trim() || !nouveauPersonnage.classe || !nouveauPersonnage.specialisation || !nouveauPersonnage.role"
+          >
+            {{ isAddingPersonnage ? 'Ajout...' : 'Ajouter' }}
+          </button>
+        </div>
+
+        <div class="feedback-banner" *ngIf="characterFeedback">
+          {{ characterFeedback }}
         </div>
       </div>
 
