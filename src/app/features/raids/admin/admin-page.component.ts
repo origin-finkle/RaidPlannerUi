@@ -598,7 +598,7 @@ export class AdminPageComponent implements OnInit {
 
     this.templateActionRaidId = slot.linkedRaid.id;
     this.templateFeedback = null;
-    this.raidService.publishCustomSignupFlowToRaidChannel(slot.linkedRaid.id).subscribe({
+    this.raidService.publishCustomSignupFlowToRaidChannel(slot.linkedRaid.id, slot.template.channelId).subscribe({
       next: (message) => {
         this.templateActionRaidId = null;
         this.templateFeedback = message;

@@ -98,8 +98,9 @@ export class RaidService {
     return this.http.post(`/api/raids/${raidId}/signup-flow/test`, {}, { responseType: 'text' });
   }
 
-  publishCustomSignupFlowToRaidChannel(raidId: number): Observable<string> {
-    return this.http.post(`/api/raids/${raidId}/signup-flow/publish`, {}, { responseType: 'text' });
+  publishCustomSignupFlowToRaidChannel(raidId: number, channelId?: string | null): Observable<string> {
+    const query = channelId ? `?channelId=${encodeURIComponent(channelId)}` : '';
+    return this.http.post(`/api/raids/${raidId}/signup-flow/publish${query}`, {}, { responseType: 'text' });
   }
 
   addManualSignup(raidId: number, personnageId: number): Observable<void> {
