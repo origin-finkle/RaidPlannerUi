@@ -111,7 +111,8 @@ export class AdminPageComponent implements OnInit {
   isRescanningRaid = false;
   isPublishingCompositionTest = false;
   isPublishingSignupFlowTest = false;
-  templateActionRaidId: number | null = null;
+  templateTestActionRaidId: number | null = null;
+  templatePublishActionRaidId: number | null = null;
   isPreviewingAutoCompose = false;
   missingPingMessage: string | null = null;
   missingPingPlayers: string[] = [];
@@ -610,19 +611,19 @@ export class AdminPageComponent implements OnInit {
   }
 
   publishTemplateSignupToTest(slot: AutoPublicationSlot): void {
-    if (!slot.linkedRaid || this.templateActionRaidId != null) {
+    if (!slot.linkedRaid || this.isTemplateActionBusy(slot)) {
       return;
     }
 
-    this.templateActionRaidId = slot.linkedRaid.id;
+    this.templateTestActionRaidId = slot.linkedRaid.id;
     this.templateFeedback = null;
     this.raidService.publishCustomSignupFlowToTestChannel(slot.linkedRaid.id).subscribe({
       next: (message) => {
-        this.templateActionRaidId = null;
+        this.templateTestActionRaidId = null;
         this.templateFeedback = message;
       },
       error: (error: HttpErrorResponse) => {
-        this.templateActionRaidId = null;
+        this.templateTestActionRaidId = null;
         this.templateFeedback = this.extractErrorMessage(
           error,
           "Impossible de publier le flow d'inscription sur le salon de test."
@@ -632,25 +633,37 @@ export class AdminPageComponent implements OnInit {
   }
 
   publishTemplateSignupNow(slot: AutoPublicationSlot): void {
-    if (!slot.linkedRaid || this.templateActionRaidId != null) {
+    if (!slot.linkedRaid || this.isTemplateActionBusy(slot)) {
       return;
     }
 
-    this.templateActionRaidId = slot.linkedRaid.id;
+    this.templatePublishActionRaidId = slot.linkedRaid.id;
     this.templateFeedback = null;
     this.raidService.publishCustomSignupFlowToRaidChannel(slot.linkedRaid.id, slot.template.channelId).subscribe({
       next: (message) => {
-        this.templateActionRaidId = null;
+        this.templatePublishActionRaidId = null;
         this.templateFeedback = message;
       },
       error: (error: HttpErrorResponse) => {
-        this.templateActionRaidId = null;
+        this.templatePublishActionRaidId = null;
         this.templateFeedback = this.extractErrorMessage(
           error,
           "Impossible de publier le flow d'inscription sur le salon de raid."
         );
       }
     });
+  }
+
+  isTemplateTestPublishing(slot: AutoPublicationSlot): boolean {
+    return !!slot.linkedRaid && this.templateTestActionRaidId === slot.linkedRaid.id;
+  }
+
+  isTemplatePublishing(slot: AutoPublicationSlot): boolean {
+    return !!slot.linkedRaid && this.templatePublishActionRaidId === slot.linkedRaid.id;
+  }
+
+  isTemplateActionBusy(slot: AutoPublicationSlot): boolean {
+    return this.isTemplateTestPublishing(slot) || this.isTemplatePublishing(slot);
   }
 
   loadAutoComposeSettings(): void {
