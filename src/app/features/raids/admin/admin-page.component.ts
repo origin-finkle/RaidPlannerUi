@@ -37,7 +37,7 @@ type OfficerFeedItem = {
 type AutoPublicationSlot = {
   template: RaidTemplateDTO;
   targetDate: string | null;
-  linkedRaid: RaidDTO | null;
+  scheduledRaid: RaidDTO | null;
   channelLabel: string;
   publicationState: 'ready' | 'published' | 'missing';
 };
@@ -241,25 +241,25 @@ export class AdminPageComponent implements OnInit {
       })
       .map((template) => {
         const targetDate = this.resolveWeekDate(template.jourSemaine, targetWeekStart);
-        const linkedRaid = this.findRaidForTemplate(template, targetDate);
-        const publicationState: AutoPublicationSlot['publicationState'] = !linkedRaid
+        const scheduledRaid = this.findRaidForTemplate(template, targetDate);
+        const publicationState: AutoPublicationSlot['publicationState'] = !scheduledRaid
           ? 'missing'
-          : linkedRaid.compositionStatus === 'PUBLISHED'
+          : scheduledRaid.compositionStatus === 'PUBLISHED'
             ? 'published'
             : 'ready';
 
         return {
           template,
           targetDate,
-          linkedRaid,
+          scheduledRaid,
           channelLabel: this.resolveChannelLabel(template.channelId),
           publicationState
         };
       });
   }
 
-  get linkedAutoPublicationCount(): number {
-    return this.autoPublicationSlots.filter((slot) => !!slot.linkedRaid).length;
+  get generatedAutoPublicationCount(): number {
+    return this.autoPublicationSlots.filter((slot) => !!slot.scheduledRaid).length;
   }
 
   get nextAutoPublicationWeekLabel(): string {

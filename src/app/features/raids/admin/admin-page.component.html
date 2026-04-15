@@ -814,8 +814,8 @@
             <strong>{{ raidTemplates.length }}</strong>
           </article>
           <article class="info-card">
-            <span class="info-card__label">Raids deja relies</span>
-            <strong>{{ linkedAutoPublicationCount }}</strong>
+              <span class="info-card__label">Raids deja generes</span>
+              <strong>{{ generatedAutoPublicationCount }}</strong>
           </article>
           <article class="info-card">
             <span class="info-card__label">Prochaine publication</span>
@@ -936,8 +936,8 @@
             <div>
               <h3>{{ slot.template.nom }}</h3>
               <p>
-                Occurrence en base:
-                {{ slot.linkedRaid ? slot.linkedRaid.nom : 'Sera creee automatiquement a la publication' }}
+                Raid de cette semaine:
+                {{ slot.scheduledRaid ? slot.scheduledRaid.nom : 'Sera cree automatiquement lors de la prochaine publication' }}
               </p>
             </div>
             <div class="badge-row">
@@ -952,7 +952,7 @@
             <span class="scheduled-event-chip">🕘 {{ slot.template.heure || 'Heure libre' }}</span>
             <span class="scheduled-event-chip"># {{ slot.channelLabel }}</span>
             <span class="scheduled-event-chip">↻ 7 jours</span>
-            <span class="scheduled-event-chip" *ngIf="slot.linkedRaid">Etat compo: {{ slot.linkedRaid.compositionStatus }}</span>
+            <span class="scheduled-event-chip" *ngIf="slot.scheduledRaid">Etat compo: {{ slot.scheduledRaid.compositionStatus }}</span>
           </div>
 
           <p class="scheduled-event-card__schedule-copy">{{ templateSchedulerSummary }}</p>
@@ -999,8 +999,8 @@
             <button
               type="button"
               class="button button--ghost"
-              *ngIf="slot.linkedRaid"
-              (click)="openRaidInPlanner(slot.linkedRaid.id, slot.linkedRaid.heure)"
+              *ngIf="slot.scheduledRaid"
+              (click)="openRaidInPlanner(slot.scheduledRaid.id, slot.scheduledRaid.heure)"
             >
               Ouvrir le planner
             </button>
