@@ -103,6 +103,7 @@ export class AdminPageComponent implements OnInit {
   historyErrorMessage: string | null = null;
   schedulerErrorMessage: string | null = null;
   quickActionFeedback: string | null = null;
+  autoPublicationWeekOffset = 0;
 
   isBuildingMissingPing = false;
   isSendingMissingPingToTest = false;
@@ -225,6 +226,8 @@ export class AdminPageComponent implements OnInit {
   }
 
   get autoPublicationSlots(): AutoPublicationSlot[] {
+    const targetWeekStart = this.getSelectedAutoPublicationWeekStart();
+
     return [...this.raidTemplates]
       .sort((left, right) => {
         const leftRank = this.dayRank(left.jourSemaine);
@@ -235,7 +238,7 @@ export class AdminPageComponent implements OnInit {
         return (left.heure || '').localeCompare(right.heure || '');
       })
       .map((template) => {
-        const targetDate = this.resolveNextResetWeekDate(template.jourSemaine);
+        const targetDate = this.resolveWeekDate(template.jourSemaine, targetWeekStart);
         const linkedRaid = this.findRaidForTemplate(template, targetDate);
         const publicationState: AutoPublicationSlot['publicationState'] = !linkedRaid
           ? 'missing'
@@ -258,11 +261,15 @@ export class AdminPageComponent implements OnInit {
   }
 
   get nextAutoPublicationWeekLabel(): string {
-    const start = this.getNextResetWeekStart();
+    const start = this.getSelectedAutoPublicationWeekStart();
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
 
     return `${this.formatDateForDisplay(start)} au ${this.formatDateForDisplay(end)}`;
+  }
+
+  get isDefaultAutoPublicationWeek(): boolean {
+    return this.autoPublicationWeekOffset === 0;
   }
 
   get officerFeedItems(): OfficerFeedItem[] {
@@ -503,6 +510,16 @@ export class AdminPageComponent implements OnInit {
         });
       }, 0);
     }
+  }
+
+  shiftAutoPublicationWeek(delta: number): void {
+    this.autoPublicationWeekOffset += delta;
+    this.templateFeedback = null;
+  }
+
+  resetAutoPublicationWeek(): void {
+    this.autoPublicationWeekOffset = 0;
+    this.templateFeedback = null;
   }
 
   saveTemplate(): void {
@@ -1214,20 +1231,19 @@ export class AdminPageComponent implements OnInit {
     return matching?.label || `#${channelId}`;
   }
 
-  private resolveNextResetWeekDate(dayOfWeek: string | null | undefined): string | null {
+  private resolveWeekDate(dayOfWeek: string | null | undefined, weekStart: Date): string | null {
     const normalized = this.normalizeSchedulerDay(dayOfWeek);
     if (!normalized) {
       return null;
     }
 
-    const start = this.getNextResetWeekStart();
     const offset = this.dayRank(normalized);
     if (offset < 0) {
       return null;
     }
 
-    const target = new Date(start);
-    target.setDate(start.getDate() + offset);
+    const target = new Date(weekStart);
+    target.setDate(weekStart.getDate() + offset);
     return this.formatDateKey(target);
   }
 
@@ -1250,7 +1266,13 @@ export class AdminPageComponent implements OnInit {
     return exactTimeMatch || day.raids[0] || null;
   }
 
-  private getNextResetWeekStart(): Date {
+  private getSelectedAutoPublicationWeekStart(): Date {
+    const start = this.getDefaultAutoPublicationWeekStart();
+    start.setDate(start.getDate() + (this.autoPublicationWeekOffset * 7));
+    return start;
+  }
+
+  private getDefaultAutoPublicationWeekStart(): Date {
     const now = new Date();
     const currentDay = now.getDay();
     const distanceToWednesday = (currentDay + 4) % 7;

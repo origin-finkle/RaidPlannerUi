@@ -823,6 +823,34 @@
             <strong>{{ nextAutoPublicationWeekLabel }}</strong>
           </article>
         </div>
+
+        <div class="character-form-card">
+          <div class="character-form-card__title">
+            <h3>Semaine cible</h3>
+            <span>Choisis la semaine de reset a relier aux slots ci-dessous pour tester, publier ou editer plus facilement.</span>
+          </div>
+
+          <div class="character-form-card__actions">
+            <button type="button" class="button button--ghost" (click)="shiftAutoPublicationWeek(-1)">
+              Semaine precedente
+            </button>
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="isDefaultAutoPublicationWeek"
+              (click)="resetAutoPublicationWeek()"
+            >
+              Revenir a la prochaine publication auto
+            </button>
+            <button type="button" class="button button--ghost" (click)="shiftAutoPublicationWeek(1)">
+              Semaine suivante
+            </button>
+          </div>
+
+          <div class="feedback-banner" *ngIf="!isDefaultAutoPublicationWeek">
+            Vue manuelle active sur {{ nextAutoPublicationWeekLabel }}. Le scheduler automatique du jeudi continue de publier sa semaine normale.
+          </div>
+        </div>
       </ng-container>
 
       <div #templateEditor class="character-form-card" *ngIf="!isTemplatesLoading">
