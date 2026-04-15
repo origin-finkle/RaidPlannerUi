@@ -928,29 +928,6 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   private getDisplayCharactersForJoueur(joueur: JoueurDTO): PersonnageDTO[] {
-    const characters = [joueur.personnageMain, ...(joueur.rerolls || [])].filter(Boolean) as PersonnageDTO[];
-
-    return characters.filter((candidate) => !this.isPlaceholderDuplicate(joueur, candidate, characters));
-  }
-
-  private isPlaceholderDuplicate(joueur: JoueurDTO, candidate: PersonnageDTO, allCharacters: PersonnageDTO[]): boolean {
-    if (!this.looksLikeAccountName(joueur, candidate.nom)) {
-      return false;
-    }
-
-    return allCharacters
-      .filter((other) => other.id !== candidate.id)
-      .some((other) =>
-        this.normalizeValue(other.classe) === this.normalizeValue(candidate.classe)
-        && this.normalizeValue(other.specialisation) === this.normalizeValue(candidate.specialisation)
-        && !this.looksLikeAccountName(joueur, other.nom)
-      );
-  }
-
-  private looksLikeAccountName(joueur: JoueurDTO, nom?: string): boolean {
-    const normalizedName = this.normalizeValue(nom).replace(/\s+/g, '');
-    return normalizedName === this.normalizeValue(joueur.serverPseudo).replace(/\s+/g, '')
-      || normalizedName === this.normalizeValue(joueur.pseudoIhm).replace(/\s+/g, '')
-      || normalizedName === this.normalizeValue(joueur.pseudo).replace(/\s+/g, '');
+    return [joueur.personnageMain, ...(joueur.rerolls || [])].filter(Boolean) as PersonnageDTO[];
   }
 }
