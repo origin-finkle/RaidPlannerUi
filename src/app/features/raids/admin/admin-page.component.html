@@ -797,9 +797,12 @@
       <div class="admin-card__header">
         <div>
           <span class="admin-kicker">Raids auto-publies</span>
-          <h2>Gere les slots qui seront publies automatiquement le jeudi soir</h2>
+          <h2>Scheduled events Origin pour les publications automatiques</h2>
         </div>
-        <button type="button" class="button button--ghost" (click)="loadRaidTemplates()">Rafraichir</button>
+        <div class="badge-row">
+          <button type="button" class="button button--ghost" (click)="loadRaidTemplates()">Rafraichir</button>
+          <button type="button" class="button button--primary" (click)="startTemplateCreation()">Nouveau slot</button>
+        </div>
       </div>
 
       <div class="diagnostic-empty" *ngIf="isTemplatesLoading">Chargement des templates...</div>
@@ -824,13 +827,8 @@
           </article>
         </div>
 
-        <div class="character-form-card">
-          <div class="character-form-card__title">
-            <h3>Semaine cible</h3>
-            <span>Choisis la semaine de reset a relier aux slots ci-dessous pour tester, publier ou editer plus facilement.</span>
-          </div>
-
-          <div class="character-form-card__actions">
+        <div class="scheduled-events-toolbar">
+          <div class="scheduled-events-week-nav">
             <button type="button" class="button button--ghost" (click)="shiftAutoPublicationWeek(-1)">
               Semaine precedente
             </button>
@@ -847,123 +845,141 @@
             </button>
           </div>
 
-          <div class="feedback-banner" *ngIf="!isDefaultAutoPublicationWeek">
-            Vue manuelle active sur {{ nextAutoPublicationWeekLabel }}. Le scheduler automatique du jeudi continue de publier sa semaine normale.
+          <div class="scheduled-events-toolbar__copy">
+            <span class="admin-kicker">Cycle automatique</span>
+            <strong>{{ nextAutoPublicationWeekLabel }}</strong>
+            <p>{{ templateSchedulerSummary }}</p>
           </div>
         </div>
+
+        <div class="feedback-banner" *ngIf="!isDefaultAutoPublicationWeek">
+          Vue manuelle active sur {{ nextAutoPublicationWeekLabel }}. Le scheduler automatique du jeudi continue de publier sa semaine normale.
+        </div>
+
+        <article #templateEditor class="scheduled-event-card scheduled-event-card--composer" *ngIf="activeTemplateEditorId === 'new'">
+          <div class="scheduled-event-card__header">
+            <div>
+              <span class="admin-kicker">New scheduled event</span>
+              <h3>Nouveau slot de publication</h3>
+              <p>Configure ici un nouveau raid recurrent a publier chaque semaine sur le salon choisi.</p>
+            </div>
+            <div class="badge-row">
+              <span class="info-badge">Nouveau</span>
+            </div>
+          </div>
+          <div class="scheduled-event-editor">
+            <div class="character-grid">
+              <label class="field">
+                <span>Nom du raid</span>
+                <input [(ngModel)]="templateDraft.nom" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Jour</span>
+                <select [(ngModel)]="templateDraft.jourSemaine" class="admin-input">
+                  <option *ngFor="let day of schedulerDayOptions" [value]="day.value">{{ day.label }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Heure du raid</span>
+                <input type="time" [(ngModel)]="templateDraft.heure" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Salon de publication</span>
+                <select [(ngModel)]="templateDraft.channelId" class="admin-input">
+                  <option [ngValue]="''">Selectionne un salon</option>
+                  <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Taille raid</span>
+                <input type="number" [(ngModel)]="templateDraft.raidSize" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Tanks / heals</span>
+                <div class="scheduled-event-editor__pair">
+                  <input type="number" [(ngModel)]="templateDraft.targetTanks" class="admin-input" />
+                  <input type="number" [(ngModel)]="templateDraft.targetHeals" class="admin-input" />
+                </div>
+              </label>
+            </div>
+
+            <div class="auto-compose-config__toggles">
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.preferMains">
+                <span>Privilegier les mains</span>
+              </label>
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.prioritizeBuffCoverage">
+                <span>Prioriser les buffs</span>
+              </label>
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.huntersFillMissingBuffs">
+                <span>Chasseurs fill buffs</span>
+              </label>
+            </div>
+
+            <div class="scheduled-event-card__actions">
+              <button type="button" class="button button--ghost" (click)="cancelTemplateEdit()">Annuler</button>
+              <button type="button" class="button button--primary" [disabled]="isTemplateSaving" (click)="saveTemplate()">
+                {{ isTemplateSaving ? 'Enregistrement...' : 'Creer le slot' }}
+              </button>
+            </div>
+          </div>
+        </article>
       </ng-container>
-
-      <div #templateEditor class="character-form-card" *ngIf="!isTemplatesLoading">
-        <div class="character-form-card__title">
-          <h3>{{ templateDraft.id ? 'Edition du slot auto' : 'Nouveau slot auto' }}</h3>
-          <span>Definis le soir, l'heure et le salon qui doivent recevoir automatiquement le signup flow maison.</span>
-        </div>
-
-        <div class="character-grid">
-          <label class="field">
-            <span>Nom du raid</span>
-            <input [(ngModel)]="templateDraft.nom" class="admin-input" />
-          </label>
-          <label class="field">
-            <span>Jour</span>
-            <select [(ngModel)]="templateDraft.jourSemaine" class="admin-input">
-              <option *ngFor="let day of schedulerDayOptions" [value]="day.value">{{ day.label }}</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Heure</span>
-            <input type="time" [(ngModel)]="templateDraft.heure" class="admin-input" />
-          </label>
-          <label class="field">
-            <span>Salon cible</span>
-            <select [(ngModel)]="templateDraft.channelId" class="admin-input">
-              <option [ngValue]="''">Selectionne un salon</option>
-              <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>Taille raid</span>
-            <input type="number" [(ngModel)]="templateDraft.raidSize" class="admin-input" />
-          </label>
-          <label class="field">
-            <span>Tanks</span>
-            <input type="number" [(ngModel)]="templateDraft.targetTanks" class="admin-input" />
-          </label>
-          <label class="field">
-            <span>Heals</span>
-            <input type="number" [(ngModel)]="templateDraft.targetHeals" class="admin-input" />
-          </label>
-        </div>
-
-        <div class="auto-compose-config__toggles">
-          <label class="config-toggle">
-            <input type="checkbox" [(ngModel)]="templateDraft.preferMains">
-            <span>Privilegier les mains</span>
-          </label>
-          <label class="config-toggle">
-            <input type="checkbox" [(ngModel)]="templateDraft.prioritizeBuffCoverage">
-            <span>Prioriser les buffs</span>
-          </label>
-          <label class="config-toggle">
-            <input type="checkbox" [(ngModel)]="templateDraft.huntersFillMissingBuffs">
-            <span>Chasseurs fill buffs</span>
-          </label>
-        </div>
-
-        <div class="character-form-card__actions">
-          <button type="button" class="button button--primary" [disabled]="isTemplateSaving" (click)="saveTemplate()">
-            {{ isTemplateSaving ? 'Enregistrement...' : 'Enregistrer le slot auto' }}
-          </button>
-        </div>
-      </div>
 
       <div class="feedback-banner" *ngIf="templateFeedback">{{ templateFeedback }}</div>
 
-      <div class="history-list" *ngIf="autoPublicationSlots.length; else noAutoPublicationSlots">
-        <article class="history-card" *ngFor="let slot of autoPublicationSlots">
-          <div class="history-card__header">
+      <div class="scheduled-events-list" *ngIf="autoPublicationSlots.length; else noAutoPublicationSlots">
+        <article class="scheduled-event-card" *ngFor="let slot of autoPublicationSlots">
+          <div class="scheduled-event-card__header">
             <div>
               <h3>{{ slot.template.nom }}</h3>
-              <p>{{ dayLabel(slot.template.jourSemaine) }} · {{ slot.template.heure || 'Heure libre' }} · {{ slot.channelLabel }}</p>
+              <p>
+                Raid lie:
+                {{ slot.linkedRaid ? slot.linkedRaid.nom : 'Aucun raid importe pour ce slot' }}
+              </p>
             </div>
             <div class="badge-row">
               <span class="info-badge">{{ slot.template.raidSize || 10 }} joueurs</span>
               <span class="info-badge">{{ slot.template.targetTanks || 2 }}T / {{ slot.template.targetHeals || 2 }}H</span>
-              <span class="info-badge" [attr.data-severity]="slot.publicationState === 'missing' ? 'high' : slot.publicationState === 'published' ? 'low' : 'medium'">
-                {{
-                  slot.publicationState === 'missing'
-                    ? 'Raid manquant'
-                    : slot.publicationState === 'published'
-                      ? 'Deja publie'
-                      : 'Pret a publier'
-                }}
-              </span>
+              <span class="info-badge" [attr.data-severity]="slot.publicationState === 'missing' ? 'high' : slot.publicationState === 'published' ? 'low' : 'medium'">{{ getPublicationStateLabel(slot.publicationState) }}</span>
             </div>
           </div>
 
-          <div class="meta-list">
-            <div class="meta-row">
-              <span>Date cible</span>
-              <strong>{{ slot.targetDate ? formatDateLabel(slot.targetDate) : 'A determiner' }}</strong>
-            </div>
-            <div class="meta-row">
-              <span>Raid lie</span>
-              <strong>{{ slot.linkedRaid ? slot.linkedRaid.nom : 'Aucun raid importe pour ce slot' }}</strong>
-            </div>
-            <div class="meta-row" *ngIf="slot.linkedRaid">
-              <span>Etat compo</span>
-              <strong>{{ slot.linkedRaid.compositionStatus }}</strong>
-            </div>
+          <div class="scheduled-event-meta">
+            <span class="scheduled-event-chip">📅 {{ slot.targetDate ? formatDateLabel(slot.targetDate) : 'Date a determiner' }}</span>
+            <span class="scheduled-event-chip">🕘 {{ slot.template.heure || 'Heure libre' }}</span>
+            <span class="scheduled-event-chip"># {{ slot.channelLabel }}</span>
+            <span class="scheduled-event-chip">↻ 7 jours</span>
+            <span class="scheduled-event-chip" *ngIf="slot.linkedRaid">Etat compo: {{ slot.linkedRaid.compositionStatus }}</span>
           </div>
 
-          <div class="pill-row">
+          <p class="scheduled-event-card__schedule-copy">{{ templateSchedulerSummary }}</p>
+
+          <div class="pill-row" *ngIf="slot.template.preferMains || slot.template.prioritizeBuffCoverage || slot.template.huntersFillMissingBuffs">
             <span class="player-pill" *ngIf="slot.template.preferMains">Mains</span>
             <span class="player-pill" *ngIf="slot.template.prioritizeBuffCoverage">Buffs</span>
             <span class="player-pill" *ngIf="slot.template.huntersFillMissingBuffs">Pets chasseurs</span>
           </div>
 
-          <div class="character-card__actions">
-            <button type="button" class="button button--secondary" (click)="editTemplate(slot.template)">Modifier</button>
+          <div class="scheduled-event-card__actions">
+            <button
+              type="button"
+              class="button button--secondary"
+              *ngIf="!isTemplateEditorOpen(slot.template.id)"
+              (click)="editTemplate(slot.template)"
+            >
+              Modifier
+            </button>
+            <button
+              type="button"
+              class="button button--ghost"
+              *ngIf="isTemplateEditorOpen(slot.template.id)"
+              (click)="cancelTemplateEdit()"
+            >
+              Fermer l'edition
+            </button>
             <button
               type="button"
               class="button button--secondary"
@@ -989,6 +1005,65 @@
               Ouvrir le planner
             </button>
             <button type="button" class="button button--danger" (click)="deleteTemplate(slot.template.id)">Supprimer</button>
+          </div>
+
+          <div class="scheduled-event-editor" *ngIf="isTemplateEditorOpen(slot.template.id)">
+            <div class="character-grid">
+              <label class="field">
+                <span>Nom du raid</span>
+                <input [(ngModel)]="templateDraft.nom" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Jour</span>
+                <select [(ngModel)]="templateDraft.jourSemaine" class="admin-input">
+                  <option *ngFor="let day of schedulerDayOptions" [value]="day.value">{{ day.label }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Heure du raid</span>
+                <input type="time" [(ngModel)]="templateDraft.heure" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Salon de publication</span>
+                <select [(ngModel)]="templateDraft.channelId" class="admin-input">
+                  <option [ngValue]="''">Selectionne un salon</option>
+                  <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Taille raid</span>
+                <input type="number" [(ngModel)]="templateDraft.raidSize" class="admin-input" />
+              </label>
+              <label class="field">
+                <span>Tanks / heals</span>
+                <div class="scheduled-event-editor__pair">
+                  <input type="number" [(ngModel)]="templateDraft.targetTanks" class="admin-input" />
+                  <input type="number" [(ngModel)]="templateDraft.targetHeals" class="admin-input" />
+                </div>
+              </label>
+            </div>
+
+            <div class="auto-compose-config__toggles">
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.preferMains">
+                <span>Privilegier les mains</span>
+              </label>
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.prioritizeBuffCoverage">
+                <span>Prioriser les buffs</span>
+              </label>
+              <label class="config-toggle">
+                <input type="checkbox" [(ngModel)]="templateDraft.huntersFillMissingBuffs">
+                <span>Chasseurs fill buffs</span>
+              </label>
+            </div>
+
+            <div class="scheduled-event-card__actions">
+              <button type="button" class="button button--ghost" (click)="cancelTemplateEdit()">Annuler</button>
+              <button type="button" class="button button--primary" [disabled]="isTemplateSaving" (click)="saveTemplate()">
+                {{ isTemplateSaving ? 'Enregistrement...' : 'Enregistrer le slot' }}
+              </button>
+            </div>
           </div>
         </article>
       </div>

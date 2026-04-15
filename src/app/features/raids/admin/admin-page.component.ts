@@ -104,6 +104,7 @@ export class AdminPageComponent implements OnInit {
   schedulerErrorMessage: string | null = null;
   quickActionFeedback: string | null = null;
   autoPublicationWeekOffset = 0;
+  activeTemplateEditorId: number | 'new' | null = null;
 
   isBuildingMissingPing = false;
   isSendingMissingPingToTest = false;
@@ -500,7 +501,14 @@ export class AdminPageComponent implements OnInit {
 
   editTemplate(template: RaidTemplateDTO): void {
     this.templateDraft = { ...template };
+    this.activeTemplateEditorId = template.id;
     this.templateFeedback = `Slot "${template.nom}" charge dans l'editeur.`;
+  }
+
+  startTemplateCreation(): void {
+    this.templateDraft = this.createEmptyTemplate();
+    this.activeTemplateEditorId = 'new';
+    this.templateFeedback = 'Nouveau slot pret a etre configure.';
 
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => {
@@ -510,6 +518,36 @@ export class AdminPageComponent implements OnInit {
         });
       }, 0);
     }
+  }
+
+  cancelTemplateEdit(): void {
+    this.activeTemplateEditorId = null;
+    this.templateDraft = this.createEmptyTemplate();
+    this.templateFeedback = null;
+  }
+
+  isTemplateEditorOpen(templateId: number | null): boolean {
+    return templateId != null && this.activeTemplateEditorId === templateId;
+  }
+
+  get templateSchedulerSummary(): string {
+    if (this.raidSchedulerStatus?.nextRunAt) {
+      return `Prochaine publication auto ${this.formatDateTimeLabel(this.raidSchedulerStatus.nextRunAt)} puis repetition tous les 7 jours.`;
+    }
+
+    const day = this.raidSchedulerStatus?.publicationDay || 'jeudi';
+    const time = this.raidSchedulerStatus?.publicationTime || '21:00';
+    return `Publication auto chaque ${day} a ${time}, puis repetition tous les 7 jours.`;
+  }
+
+  getPublicationStateLabel(state: AutoPublicationSlot['publicationState']): string {
+    if (state === 'missing') {
+      return 'Raid manquant';
+    }
+    if (state === 'published') {
+      return 'Deja publie';
+    }
+    return 'Pret a publier';
   }
 
   shiftAutoPublicationWeek(delta: number): void {
@@ -539,6 +577,7 @@ export class AdminPageComponent implements OnInit {
       next: () => {
         this.isTemplateSaving = false;
         this.templateFeedback = 'Template enregistre.';
+        this.activeTemplateEditorId = null;
         this.templateDraft = this.createEmptyTemplate();
         this.loadRaidTemplates();
       },
@@ -559,6 +598,7 @@ export class AdminPageComponent implements OnInit {
       next: () => {
         this.templateFeedback = 'Template supprime.';
         if (this.templateDraft.id === templateId) {
+          this.activeTemplateEditorId = null;
           this.templateDraft = this.createEmptyTemplate();
         }
         this.loadRaidTemplates();

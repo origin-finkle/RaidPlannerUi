@@ -386,6 +386,102 @@
   justify-content: flex-start;
 }
 
+.scheduled-events-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1.1rem 1.2rem;
+  margin-top: 1rem;
+  border-radius: 1.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background:
+    linear-gradient(135deg, rgba(91, 33, 182, 0.18), rgba(15, 23, 42, 0.58)),
+    rgba(15, 23, 42, 0.52);
+}
+
+.scheduled-events-week-nav,
+.scheduled-event-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.scheduled-events-toolbar__copy strong {
+  display: block;
+  color: var(--text-strong);
+  font-size: 1.15rem;
+}
+.scheduled-events-toolbar__copy p,
+.scheduled-event-card__schedule-copy {
+  margin: 0.45rem 0 0;
+  color: var(--text-muted);
+}
+.scheduled-events-list {
+  display: grid;
+  gap: 1rem;
+}
+.scheduled-event-card {
+  position: relative;
+  padding: 1.35rem;
+  border-radius: 1.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background:
+    linear-gradient(90deg, rgba(147, 51, 234, 0.24) 0, rgba(147, 51, 234, 0.24) 6px, transparent 6px),
+    linear-gradient(135deg, rgba(30, 41, 59, 0.62), rgba(15, 23, 42, 0.82));
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 1rem;
+}
+
+.scheduled-event-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.scheduled-event-card__header h3 {
+  margin: 0.25rem 0 0;
+  color: var(--text-strong);
+  font-size: 1.9rem;
+}
+
+.scheduled-event-card__header p {
+  margin: 0.5rem 0 0;
+  color: var(--text-muted);
+}
+
+.scheduled-event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.scheduled-event-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.52rem 0.8rem;
+  border-radius: 0.95rem;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.68);
+  color: #d8e2ff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.scheduled-event-editor {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.scheduled-event-editor__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .tests-preview pre,
 .reminder-preview pre {
   margin: 0.75rem 0 0;
@@ -567,7 +663,8 @@
   .diagnostic-message-grid,
   .diagnostic-signups-grid,
   .diagnostic-diff-grid,
-  .operational-toolbar {
+  .operational-toolbar,
+  .scheduled-events-toolbar {
     grid-template-columns: 1fr;
   }
 }
@@ -580,6 +677,17 @@
 
   .admin-modal {
     max-height: calc(100vh - 5.5rem);
+  }
+
+  .scheduled-event-card__header,
+  .scheduled-events-week-nav,
+  .scheduled-event-card__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scheduled-event-editor__pair {
+    grid-template-columns: 1fr;
   }
 
   .roster-table__head {
