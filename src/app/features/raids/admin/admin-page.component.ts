@@ -34,6 +34,13 @@ type OfficerFeedItem = {
   primaryActionLabel: string;
   primaryAction: 'planner' | 'diagnostics' | 'reminders';
 };
+type AutoPublicationSlot = {
+  template: RaidTemplateDTO;
+  targetDate: string | null;
+  linkedRaid: RaidDTO | null;
+  channelLabel: string;
+  publicationState: 'ready' | 'published' | 'missing';
+};
 
 @Component({
   selector: 'app-admin-page',
@@ -101,6 +108,7 @@ export class AdminPageComponent implements OnInit {
   isRescanningRaid = false;
   isPublishingCompositionTest = false;
   isPublishingSignupFlowTest = false;
+  templateActionRaidId: number | null = null;
   isPreviewingAutoCompose = false;
   missingPingMessage: string | null = null;
   missingPingPlayers: string[] = [];
@@ -202,6 +210,58 @@ export class AdminPageComponent implements OnInit {
         label: `${this.formatDateLabel(day.date)} · ${raid.nom}`
       }))
     );
+  }
+
+  get schedulerChannelOptions(): Array<{ id: string; label: string }> {
+    if (!this.raidSchedulerStatus) {
+      return [];
+    }
+
+    return this.raidSchedulerStatus.channelIds.map((id, index) => ({
+      id,
+      label: this.raidSchedulerStatus?.channelNames[index] || `#${id}`
+    }));
+  }
+
+  get autoPublicationSlots(): AutoPublicationSlot[] {
+    return [...this.raidTemplates]
+      .sort((left, right) => {
+        const leftRank = this.dayRank(left.jourSemaine);
+        const rightRank = this.dayRank(right.jourSemaine);
+        if (leftRank !== rightRank) {
+          return leftRank - rightRank;
+        }
+        return (left.heure || '').localeCompare(right.heure || '');
+      })
+      .map((template) => {
+        const targetDate = this.resolveNextResetWeekDate(template.jourSemaine);
+        const linkedRaid = this.findRaidForTemplate(template, targetDate);
+        const publicationState: AutoPublicationSlot['publicationState'] = !linkedRaid
+          ? 'missing'
+          : linkedRaid.compositionStatus === 'PUBLISHED'
+            ? 'published'
+            : 'ready';
+
+        return {
+          template,
+          targetDate,
+          linkedRaid,
+          channelLabel: this.resolveChannelLabel(template.channelId),
+          publicationState
+        };
+      });
+  }
+
+  get linkedAutoPublicationCount(): number {
+    return this.autoPublicationSlots.filter((slot) => !!slot.linkedRaid).length;
+  }
+
+  get nextAutoPublicationWeekLabel(): string {
+    const start = this.getNextResetWeekStart();
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    return `${this.formatDateForDisplay(start)} au ${this.formatDateForDisplay(end)}`;
   }
 
   get officerFeedItems(): OfficerFeedItem[] {
@@ -435,7 +495,13 @@ export class AdminPageComponent implements OnInit {
   }
 
   saveTemplate(): void {
-    if (this.isTemplateSaving || !this.templateDraft.nom?.trim()) {
+    if (
+      this.isTemplateSaving
+      || !this.templateDraft.nom?.trim()
+      || !this.templateDraft.jourSemaine?.trim()
+      || !this.templateDraft.heure?.trim()
+      || !this.templateDraft.channelId?.trim()
+    ) {
       return;
     }
 
@@ -471,6 +537,50 @@ export class AdminPageComponent implements OnInit {
       },
       error: () => {
         this.templateFeedback = 'Impossible de supprimer ce template.';
+      }
+    });
+  }
+
+  publishTemplateSignupToTest(slot: AutoPublicationSlot): void {
+    if (!slot.linkedRaid || this.templateActionRaidId != null) {
+      return;
+    }
+
+    this.templateActionRaidId = slot.linkedRaid.id;
+    this.templateFeedback = null;
+    this.raidService.publishCustomSignupFlowToTestChannel(slot.linkedRaid.id).subscribe({
+      next: (message) => {
+        this.templateActionRaidId = null;
+        this.templateFeedback = message;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.templateActionRaidId = null;
+        this.templateFeedback = this.extractErrorMessage(
+          error,
+          "Impossible de publier le flow d'inscription sur le salon de test."
+        );
+      }
+    });
+  }
+
+  publishTemplateSignupNow(slot: AutoPublicationSlot): void {
+    if (!slot.linkedRaid || this.templateActionRaidId != null) {
+      return;
+    }
+
+    this.templateActionRaidId = slot.linkedRaid.id;
+    this.templateFeedback = null;
+    this.raidService.publishCustomSignupFlowToRaidChannel(slot.linkedRaid.id).subscribe({
+      next: (message) => {
+        this.templateActionRaidId = null;
+        this.templateFeedback = message;
+      },
+      error: (error: HttpErrorResponse) => {
+        this.templateActionRaidId = null;
+        this.templateFeedback = this.extractErrorMessage(
+          error,
+          "Impossible de publier le flow d'inscription sur le salon de raid."
+        );
       }
     });
   }
@@ -923,6 +1033,12 @@ export class AdminPageComponent implements OnInit {
     return 'Info';
   }
 
+  dayLabel(dayOfWeek: string | null | undefined): string {
+    const normalized = this.normalizeSchedulerDay(dayOfWeek);
+    const matching = this.schedulerDayOptions.find((option) => option.value === normalized);
+    return matching?.label || dayOfWeek || 'Jour libre';
+  }
+
   get mergeCandidates(): PersonnageDTO[] {
     return this.personnagesDuJoueur;
   }
@@ -1047,9 +1163,9 @@ export class AdminPageComponent implements OnInit {
     return {
       id: null,
       nom: '',
-      jourSemaine: '',
-      heure: '',
-      channelId: '',
+      jourSemaine: 'WEDNESDAY',
+      heure: '20:45',
+      channelId: this.schedulerChannelOptions[0]?.id || '',
       messageId: null,
       raidSize: 10,
       targetTanks: 2,
@@ -1076,6 +1192,110 @@ export class AdminPageComponent implements OnInit {
     };
 
     return `${formatGroup('Groupe 1', raid.group1)}\n\n${formatGroup('Groupe 2', raid.group2)}`;
+  }
+
+  private resolveChannelLabel(channelId?: string | null): string {
+    if (!channelId) {
+      return 'Salon non defini';
+    }
+
+    const matching = this.schedulerChannelOptions.find((channel) => channel.id === channelId);
+    return matching?.label || `#${channelId}`;
+  }
+
+  private resolveNextResetWeekDate(dayOfWeek: string | null | undefined): string | null {
+    const normalized = this.normalizeSchedulerDay(dayOfWeek);
+    if (!normalized) {
+      return null;
+    }
+
+    const start = this.getNextResetWeekStart();
+    const offset = this.dayRank(normalized);
+    if (offset < 0) {
+      return null;
+    }
+
+    const target = new Date(start);
+    target.setDate(start.getDate() + offset);
+    return this.formatDateKey(target);
+  }
+
+  private findRaidForTemplate(template: RaidTemplateDTO, targetDate: string | null): RaidDTO | null {
+    if (!targetDate) {
+      return null;
+    }
+
+    const day = this.groupedRaids.find((entry) => entry.date === targetDate);
+    if (!day) {
+      return null;
+    }
+
+    const exactChannelMatch = day.raids.find((raid) => raid.channelId === template.channelId);
+    if (exactChannelMatch) {
+      return exactChannelMatch;
+    }
+
+    const exactTimeMatch = day.raids.find((raid) => this.timePart(raid.heure) === this.timePart(template.heure));
+    return exactTimeMatch || day.raids[0] || null;
+  }
+
+  private getNextResetWeekStart(): Date {
+    const now = new Date();
+    const currentDay = now.getDay();
+    const distanceToWednesday = (currentDay + 4) % 7;
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(now.getDate() - distanceToWednesday + 7);
+    return start;
+  }
+
+  private normalizeSchedulerDay(value: string | null | undefined): string {
+    const normalized = (value || '').trim().toUpperCase();
+    if (!normalized) {
+      return '';
+    }
+
+    const aliasMap: Record<string, string> = {
+      LUNDI: 'MONDAY',
+      MARDI: 'TUESDAY',
+      MERCREDI: 'WEDNESDAY',
+      JEUDI: 'THURSDAY',
+      VENDREDI: 'FRIDAY',
+      SAMEDI: 'SATURDAY',
+      DIMANCHE: 'SUNDAY'
+    };
+
+    return aliasMap[normalized] || normalized;
+  }
+
+  private dayRank(dayOfWeek: string | null | undefined): number {
+    const normalized = this.normalizeSchedulerDay(dayOfWeek);
+    const order = ['WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY', 'MONDAY', 'TUESDAY'];
+    return order.indexOf(normalized);
+  }
+
+  private formatDateKey(value: Date): string {
+    const year = value.getFullYear();
+    const month = `${value.getMonth() + 1}`.padStart(2, '0');
+    const day = `${value.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatDateForDisplay(value: Date): string {
+    return new Intl.DateTimeFormat('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    }).format(value);
+  }
+
+  private timePart(value: string | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    const match = value.match(/(\d{2}:\d{2})/);
+    return match?.[1] || value;
   }
 
   private getEmojiTag(classe: string, specialisation: string): string {

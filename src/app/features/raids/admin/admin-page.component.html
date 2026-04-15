@@ -796,32 +796,62 @@
     <div class="admin-card">
       <div class="admin-card__header">
         <div>
-          <span class="admin-kicker">Templates de raid</span>
-          <h2>Prepare des presets reutilisables</h2>
+          <span class="admin-kicker">Raids auto-publies</span>
+          <h2>Gere les slots qui seront publies automatiquement le jeudi soir</h2>
         </div>
         <button type="button" class="button button--ghost" (click)="loadRaidTemplates()">Rafraichir</button>
       </div>
 
       <div class="diagnostic-empty" *ngIf="isTemplatesLoading">Chargement des templates...</div>
 
+      <ng-container *ngIf="!isTemplatesLoading">
+        <div class="diagnostic-summary-grid">
+          <article class="info-card">
+            <span class="info-card__label">Slots configures</span>
+            <strong>{{ raidTemplates.length }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Raids deja relies</span>
+            <strong>{{ linkedAutoPublicationCount }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Prochaine publication</span>
+            <strong>{{ raidSchedulerStatus?.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus?.nextRunAt) : 'Non planifiee' }}</strong>
+          </article>
+          <article class="info-card">
+            <span class="info-card__label">Semaine cible</span>
+            <strong>{{ nextAutoPublicationWeekLabel }}</strong>
+          </article>
+        </div>
+      </ng-container>
+
       <div class="character-form-card" *ngIf="!isTemplatesLoading">
         <div class="character-form-card__title">
-          <h3>{{ templateDraft.id ? 'Edition du template' : 'Nouveau template' }}</h3>
-          <span>Definis un preset pour un type de raid ou un soir particulier.</span>
+          <h3>{{ templateDraft.id ? 'Edition du slot auto' : 'Nouveau slot auto' }}</h3>
+          <span>Definis le soir, l'heure et le salon qui doivent recevoir automatiquement le signup flow maison.</span>
         </div>
 
         <div class="character-grid">
           <label class="field">
-            <span>Nom</span>
+            <span>Nom du raid</span>
             <input [(ngModel)]="templateDraft.nom" class="admin-input" />
           </label>
           <label class="field">
             <span>Jour</span>
-            <input [(ngModel)]="templateDraft.jourSemaine" class="admin-input" />
+            <select [(ngModel)]="templateDraft.jourSemaine" class="admin-input">
+              <option *ngFor="let day of schedulerDayOptions" [value]="day.value">{{ day.label }}</option>
+            </select>
           </label>
           <label class="field">
             <span>Heure</span>
-            <input [(ngModel)]="templateDraft.heure" class="admin-input" />
+            <input type="time" [(ngModel)]="templateDraft.heure" class="admin-input" />
+          </label>
+          <label class="field">
+            <span>Salon cible</span>
+            <select [(ngModel)]="templateDraft.channelId" class="admin-input">
+              <option [ngValue]="''">Selectionne un salon</option>
+              <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
+            </select>
           </label>
           <label class="field">
             <span>Taille raid</span>
@@ -854,38 +884,89 @@
 
         <div class="character-form-card__actions">
           <button type="button" class="button button--primary" [disabled]="isTemplateSaving" (click)="saveTemplate()">
-            {{ isTemplateSaving ? 'Enregistrement...' : 'Enregistrer le template' }}
+            {{ isTemplateSaving ? 'Enregistrement...' : 'Enregistrer le slot auto' }}
           </button>
         </div>
       </div>
 
       <div class="feedback-banner" *ngIf="templateFeedback">{{ templateFeedback }}</div>
 
-      <div class="history-list" *ngIf="raidTemplates.length">
-        <article class="history-card" *ngFor="let template of raidTemplates">
+      <div class="history-list" *ngIf="autoPublicationSlots.length; else noAutoPublicationSlots">
+        <article class="history-card" *ngFor="let slot of autoPublicationSlots">
           <div class="history-card__header">
             <div>
-              <h3>{{ template.nom }}</h3>
-              <p>{{ template.jourSemaine || 'Jour libre' }} · {{ template.heure || 'Heure libre' }}</p>
+              <h3>{{ slot.template.nom }}</h3>
+              <p>{{ dayLabel(slot.template.jourSemaine) }} · {{ slot.template.heure || 'Heure libre' }} · {{ slot.channelLabel }}</p>
             </div>
             <div class="badge-row">
-              <span class="info-badge">{{ template.raidSize || 10 }} joueurs</span>
-              <span class="info-badge">{{ template.targetTanks || 2 }}T / {{ template.targetHeals || 2 }}H</span>
+              <span class="info-badge">{{ slot.template.raidSize || 10 }} joueurs</span>
+              <span class="info-badge">{{ slot.template.targetTanks || 2 }}T / {{ slot.template.targetHeals || 2 }}H</span>
+              <span class="info-badge" [attr.data-severity]="slot.publicationState === 'missing' ? 'high' : slot.publicationState === 'published' ? 'low' : 'medium'">
+                {{
+                  slot.publicationState === 'missing'
+                    ? 'Raid manquant'
+                    : slot.publicationState === 'published'
+                      ? 'Deja publie'
+                      : 'Pret a publier'
+                }}
+              </span>
+            </div>
+          </div>
+
+          <div class="meta-list">
+            <div class="meta-row">
+              <span>Date cible</span>
+              <strong>{{ slot.targetDate ? formatDateLabel(slot.targetDate) : 'A determiner' }}</strong>
+            </div>
+            <div class="meta-row">
+              <span>Raid lie</span>
+              <strong>{{ slot.linkedRaid ? slot.linkedRaid.nom : 'Aucun raid importe pour ce slot' }}</strong>
+            </div>
+            <div class="meta-row" *ngIf="slot.linkedRaid">
+              <span>Etat compo</span>
+              <strong>{{ slot.linkedRaid.compositionStatus }}</strong>
             </div>
           </div>
 
           <div class="pill-row">
-            <span class="player-pill" *ngIf="template.preferMains">Mains</span>
-            <span class="player-pill" *ngIf="template.prioritizeBuffCoverage">Buffs</span>
-            <span class="player-pill" *ngIf="template.huntersFillMissingBuffs">Pets chasseurs</span>
+            <span class="player-pill" *ngIf="slot.template.preferMains">Mains</span>
+            <span class="player-pill" *ngIf="slot.template.prioritizeBuffCoverage">Buffs</span>
+            <span class="player-pill" *ngIf="slot.template.huntersFillMissingBuffs">Pets chasseurs</span>
           </div>
 
           <div class="character-card__actions">
-            <button type="button" class="button button--secondary" (click)="editTemplate(template)">Modifier</button>
-            <button type="button" class="button button--danger" (click)="deleteTemplate(template.id)">Supprimer</button>
+            <button type="button" class="button button--secondary" (click)="editTemplate(slot.template)">Modifier</button>
+            <button
+              type="button"
+              class="button button--secondary"
+              [disabled]="!slot.linkedRaid || templateActionRaidId === slot.linkedRaid.id"
+              (click)="publishTemplateSignupToTest(slot)"
+            >
+              {{ templateActionRaidId === slot.linkedRaid?.id ? 'Publication...' : 'Tester sur salon test' }}
+            </button>
+            <button
+              type="button"
+              class="button button--primary"
+              [disabled]="!slot.linkedRaid || templateActionRaidId === slot.linkedRaid.id"
+              (click)="publishTemplateSignupNow(slot)"
+            >
+              {{ templateActionRaidId === slot.linkedRaid?.id ? 'Publication...' : 'Publier maintenant' }}
+            </button>
+            <button
+              type="button"
+              class="button button--ghost"
+              *ngIf="slot.linkedRaid"
+              (click)="openRaidInPlanner(slot.linkedRaid.id, slot.linkedRaid.heure)"
+            >
+              Ouvrir le planner
+            </button>
+            <button type="button" class="button button--danger" (click)="deleteTemplate(slot.template.id)">Supprimer</button>
           </div>
         </article>
       </div>
+      <ng-template #noAutoPublicationSlots>
+        <div class="diagnostic-empty">Aucun slot de publication automatique n'est configure pour le moment.</div>
+      </ng-template>
     </div>
   </ng-container>
 

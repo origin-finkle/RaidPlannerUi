@@ -7,6 +7,7 @@ export interface RaidDTO {
   id: number;
   nom: string;
   heure: string;
+  channelId: string;
   joueurDTOList: JoueurDTO[];
   group1?: PersonnageDTO[];
   group2?: PersonnageDTO[];
