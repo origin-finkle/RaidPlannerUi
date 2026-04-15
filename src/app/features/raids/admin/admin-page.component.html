@@ -825,7 +825,7 @@
         </div>
       </ng-container>
 
-      <div class="character-form-card" *ngIf="!isTemplatesLoading">
+      <div #templateEditor class="character-form-card" *ngIf="!isTemplatesLoading">
         <div class="character-form-card__title">
           <h3>{{ templateDraft.id ? 'Edition du slot auto' : 'Nouveau slot auto' }}</h3>
           <span>Definis le soir, l'heure et le salon qui doivent recevoir automatiquement le signup flow maison.</span>

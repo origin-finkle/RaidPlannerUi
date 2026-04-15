@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, PLATFORM_ID, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
@@ -55,6 +55,7 @@ export class AdminPageComponent implements OnInit {
   private joueurService = inject(JoueurService);
   private raidService = inject(RaidService);
   private router = inject(Router);
+  @ViewChild('templateEditor') templateEditor?: ElementRef<HTMLElement>;
 
   activeTab: AdminTab = 'dashboard';
 
@@ -492,6 +493,16 @@ export class AdminPageComponent implements OnInit {
 
   editTemplate(template: RaidTemplateDTO): void {
     this.templateDraft = { ...template };
+    this.templateFeedback = `Slot "${template.nom}" charge dans l'editeur.`;
+
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => {
+        this.templateEditor?.nativeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 0);
+    }
   }
 
   saveTemplate(): void {
