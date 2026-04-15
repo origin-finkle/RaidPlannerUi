@@ -74,18 +74,18 @@
       <div class="admin-card admin-card--subtle" *ngIf="isSchedulerLoading || raidSchedulerStatus || schedulerErrorMessage">
         <div class="admin-card__header">
           <div>
-            <span class="admin-kicker">Import automatique des raids</span>
+            <span class="admin-kicker">Publication automatique des raids</span>
             <h2>Publication attendue le {{ raidSchedulerStatus?.publicationDay || 'jeudi' }} a {{ raidSchedulerStatus?.publicationTime || '21:00' }}</h2>
           </div>
         </div>
 
-        <div class="diagnostic-empty" *ngIf="isSchedulerLoading">Chargement du scheduler d'import...</div>
+        <div class="diagnostic-empty" *ngIf="isSchedulerLoading">Chargement du scheduler auto...</div>
         <div class="diagnostic-empty diagnostic-empty--danger" *ngIf="!isSchedulerLoading && schedulerErrorMessage">{{ schedulerErrorMessage }}</div>
 
         <ng-container *ngIf="raidSchedulerStatus && !isSchedulerLoading">
           <div class="diagnostic-summary-grid">
             <article class="info-card">
-              <span class="info-card__label">Prochain import</span>
+              <span class="info-card__label">Prochaine publication</span>
               <strong>{{ raidSchedulerStatus.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus.nextRunAt) : 'Non calcule' }}</strong>
             </article>
             <article class="info-card">
@@ -93,7 +93,7 @@
               <strong>{{ raidSchedulerStatus.lastRunAt ? formatDateTimeLabel(raidSchedulerStatus.lastRunAt) : 'Aucun' }}</strong>
             </article>
             <article class="info-card">
-              <span class="info-card__label">Derniers imports</span>
+              <span class="info-card__label">Derniers raids publies</span>
               <strong>{{ raidSchedulerStatus.lastImportedCount ?? 0 }}</strong>
             </article>
             <article class="info-card">
@@ -725,8 +725,8 @@
 
       <div class="character-form-card" *ngIf="!isSettingsLoading && raidSchedulerStatus">
         <div class="character-form-card__title">
-          <h3>Scheduler d'import</h3>
-          <span>Choisis quand les 4 salons mercredi, jeudi, dimanche et lundi doivent etre rescannes automatiquement.</span>
+          <h3>Scheduler auto</h3>
+          <span>Choisis quand les 4 raids hebdo doivent etre crees et publies automatiquement.</span>
         </div>
 
         <div class="character-grid">
@@ -764,9 +764,9 @@
         </div>
 
         <div class="meta-list">
-          <div class="meta-row"><span>Prochain import</span><strong>{{ raidSchedulerStatus.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus.nextRunAt) : 'Desactive' }}</strong></div>
-          <div class="meta-row"><span>Dernier import</span><strong>{{ raidSchedulerStatus.lastRunAt ? formatDateTimeLabel(raidSchedulerStatus.lastRunAt) : 'Aucun' }}</strong></div>
-          <div class="meta-row"><span>Raids importes au dernier run</span><strong>{{ raidSchedulerStatus.lastImportedCount ?? 0 }}</strong></div>
+          <div class="meta-row"><span>Prochaine publication</span><strong>{{ raidSchedulerStatus.nextRunAt ? formatDateTimeLabel(raidSchedulerStatus.nextRunAt) : 'Desactive' }}</strong></div>
+          <div class="meta-row"><span>Derniere publication</span><strong>{{ raidSchedulerStatus.lastRunAt ? formatDateTimeLabel(raidSchedulerStatus.lastRunAt) : 'Aucune' }}</strong></div>
+          <div class="meta-row"><span>Raids publies au dernier run</span><strong>{{ raidSchedulerStatus.lastImportedCount ?? 0 }}</strong></div>
         </div>
 
         <div class="pill-row">
@@ -936,8 +936,8 @@
             <div>
               <h3>{{ slot.template.nom }}</h3>
               <p>
-                Raid lie:
-                {{ slot.linkedRaid ? slot.linkedRaid.nom : 'Aucun raid importe pour ce slot' }}
+                Occurrence en base:
+                {{ slot.linkedRaid ? slot.linkedRaid.nom : 'Sera creee automatiquement a la publication' }}
               </p>
             </div>
             <div class="badge-row">
@@ -983,7 +983,7 @@
             <button
               type="button"
               class="button button--secondary"
-              [disabled]="!slot.linkedRaid || isTemplateActionBusy(slot)"
+              [disabled]="!slot.template.id || isTemplateActionBusy(slot)"
               (click)="publishTemplateSignupToTest(slot)"
             >
               {{ isTemplateTestPublishing(slot) ? 'Publication...' : 'Tester sur salon test' }}
@@ -991,7 +991,7 @@
             <button
               type="button"
               class="button button--primary"
-              [disabled]="!slot.linkedRaid || isTemplateActionBusy(slot)"
+              [disabled]="!slot.template.id || isTemplateActionBusy(slot)"
               (click)="publishTemplateSignupNow(slot)"
             >
               {{ isTemplatePublishing(slot) ? 'Publication...' : 'Publier maintenant' }}

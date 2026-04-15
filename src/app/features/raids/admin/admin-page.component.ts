@@ -111,8 +111,8 @@ export class AdminPageComponent implements OnInit {
   isRescanningRaid = false;
   isPublishingCompositionTest = false;
   isPublishingSignupFlowTest = false;
-  templateTestActionRaidId: number | null = null;
-  templatePublishActionRaidId: number | null = null;
+  templateTestActionTemplateId: number | null = null;
+  templatePublishActionTemplateId: number | null = null;
   isPreviewingAutoCompose = false;
   missingPingMessage: string | null = null;
   missingPingPlayers: string[] = [];
@@ -427,7 +427,7 @@ export class AdminPageComponent implements OnInit {
       },
       error: () => {
         this.raidSchedulerStatus = null;
-        this.schedulerErrorMessage = "Impossible de charger le scheduler d'import.";
+        this.schedulerErrorMessage = 'Impossible de charger le scheduler automatique.';
         this.isSchedulerLoading = false;
       }
     });
@@ -446,11 +446,11 @@ export class AdminPageComponent implements OnInit {
       next: (status) => {
         this.raidSchedulerStatus = status;
         this.isSchedulerSaving = false;
-        this.settingsFeedback = "Scheduler d'import enregistre.";
+        this.settingsFeedback = 'Scheduler automatique enregistre.';
       },
       error: () => {
         this.isSchedulerSaving = false;
-        this.schedulerErrorMessage = "Impossible d'enregistrer le scheduler d'import.";
+        this.schedulerErrorMessage = "Impossible d'enregistrer le scheduler automatique.";
       }
     });
   }
@@ -543,7 +543,7 @@ export class AdminPageComponent implements OnInit {
 
   getPublicationStateLabel(state: AutoPublicationSlot['publicationState']): string {
     if (state === 'missing') {
-      return 'Raid manquant';
+      return 'A generer';
     }
     if (state === 'published') {
       return 'Deja publie';
@@ -611,19 +611,21 @@ export class AdminPageComponent implements OnInit {
   }
 
   publishTemplateSignupToTest(slot: AutoPublicationSlot): void {
-    if (!slot.linkedRaid || this.isTemplateActionBusy(slot)) {
+    if (!slot.template.id || this.isTemplateActionBusy(slot)) {
       return;
     }
 
-    this.templateTestActionRaidId = slot.linkedRaid.id;
+    this.templateTestActionTemplateId = slot.template.id;
     this.templateFeedback = null;
-    this.raidService.publishCustomSignupFlowToTestChannel(slot.linkedRaid.id).subscribe({
+    this.raidService.publishTemplateSignupFlowToTestChannel(slot.template.id, this.autoPublicationWeekOffset).subscribe({
       next: (message) => {
-        this.templateTestActionRaidId = null;
+        this.templateTestActionTemplateId = null;
         this.templateFeedback = message;
+        this.refreshOperationalData();
+        this.loadPublicationHistory();
       },
       error: (error: HttpErrorResponse) => {
-        this.templateTestActionRaidId = null;
+        this.templateTestActionTemplateId = null;
         this.templateFeedback = this.extractErrorMessage(
           error,
           "Impossible de publier le flow d'inscription sur le salon de test."
@@ -633,19 +635,21 @@ export class AdminPageComponent implements OnInit {
   }
 
   publishTemplateSignupNow(slot: AutoPublicationSlot): void {
-    if (!slot.linkedRaid || this.isTemplateActionBusy(slot)) {
+    if (!slot.template.id || this.isTemplateActionBusy(slot)) {
       return;
     }
 
-    this.templatePublishActionRaidId = slot.linkedRaid.id;
+    this.templatePublishActionTemplateId = slot.template.id;
     this.templateFeedback = null;
-    this.raidService.publishCustomSignupFlowToRaidChannel(slot.linkedRaid.id, slot.template.channelId).subscribe({
+    this.raidService.publishTemplateSignupFlowToRaidChannel(slot.template.id, this.autoPublicationWeekOffset).subscribe({
       next: (message) => {
-        this.templatePublishActionRaidId = null;
+        this.templatePublishActionTemplateId = null;
         this.templateFeedback = message;
+        this.refreshOperationalData();
+        this.loadPublicationHistory();
       },
       error: (error: HttpErrorResponse) => {
-        this.templatePublishActionRaidId = null;
+        this.templatePublishActionTemplateId = null;
         this.templateFeedback = this.extractErrorMessage(
           error,
           "Impossible de publier le flow d'inscription sur le salon de raid."
@@ -655,11 +659,11 @@ export class AdminPageComponent implements OnInit {
   }
 
   isTemplateTestPublishing(slot: AutoPublicationSlot): boolean {
-    return !!slot.linkedRaid && this.templateTestActionRaidId === slot.linkedRaid.id;
+    return !!slot.template.id && this.templateTestActionTemplateId === slot.template.id;
   }
 
   isTemplatePublishing(slot: AutoPublicationSlot): boolean {
-    return !!slot.linkedRaid && this.templatePublishActionRaidId === slot.linkedRaid.id;
+    return !!slot.template.id && this.templatePublishActionTemplateId === slot.template.id;
   }
 
   isTemplateActionBusy(slot: AutoPublicationSlot): boolean {

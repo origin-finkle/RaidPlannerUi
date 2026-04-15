@@ -103,6 +103,14 @@ export class RaidService {
     return this.http.post(`/api/raids/${raidId}/signup-flow/publish${query}`, {}, { responseType: 'text' });
   }
 
+  publishTemplateSignupFlowToTestChannel(templateId: number, weekOffset = 0): Observable<string> {
+    return this.http.post(`/api/raids/templates/${templateId}/signup-flow/test?weekOffset=${weekOffset}`, {}, { responseType: 'text' });
+  }
+
+  publishTemplateSignupFlowToRaidChannel(templateId: number, weekOffset = 0): Observable<string> {
+    return this.http.post(`/api/raids/templates/${templateId}/signup-flow/publish?weekOffset=${weekOffset}`, {}, { responseType: 'text' });
+  }
+
   addManualSignup(raidId: number, personnageId: number): Observable<void> {
     return this.http.post<void>(`/api/raids/${raidId}/manual-signups`, { personnageId });
   }
