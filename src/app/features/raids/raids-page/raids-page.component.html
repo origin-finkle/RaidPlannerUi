@@ -58,12 +58,18 @@
         </label>
         <label class="config-field">
           <span>Salon Discord</span>
-          <input
-            type="text"
-            [(ngModel)]="createRaidDraft.channelId"
-            list="raid-channel-options"
-            placeholder="ID de salon ou suggestion"
-          >
+          <select *ngIf="availableDiscordChannelOptions.length; else manualChannelInput" [(ngModel)]="createRaidDraft.channelId">
+            <option *ngFor="let channel of availableDiscordChannelOptions" [ngValue]="channel.id">
+              {{ channel.label }}
+            </option>
+          </select>
+          <ng-template #manualChannelInput>
+            <input
+              type="text"
+              [(ngModel)]="createRaidDraft.channelId"
+              placeholder="ID de salon Discord"
+            >
+          </ng-template>
         </label>
       </div>
 
@@ -83,10 +89,6 @@
       </div>
     </div>
   </div>
-
-  <datalist id="raid-channel-options">
-    <option *ngFor="let channel of availableDiscordChannelOptions" [value]="channel.id">{{ channel.label }}</option>
-  </datalist>
 
   <div class="raids-toolbar" *ngIf="groupedRaids.length; else emptyState">
     <div class="panel panel--subtle">
