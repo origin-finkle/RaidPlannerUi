@@ -170,9 +170,18 @@
         <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
           {{ getSignupSourceLabel(p.nom) }}
         </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+          <span class="status-dot yellow"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+          <span class="status-dot orange"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+          <span class="status-dot red"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
         <button
           *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
           type="button"
@@ -214,9 +223,18 @@
         <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
           {{ getSignupSourceLabel(p.nom) }}
         </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+          <span class="status-dot yellow"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+          <span class="status-dot orange"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+          <span class="status-dot red"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
         <button
           *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
           type="button"
@@ -258,9 +276,18 @@
         <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
           {{ getSignupSourceLabel(p.nom) }}
         </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-dot yellow" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-dot orange" [title]="getParticipationTitle(p.nom)"></span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-dot red" [title]="getParticipationTitle(p.nom)"></span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+          <span class="status-dot yellow"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+          <span class="status-dot orange"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
+        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+          <span class="status-dot red"></span>
+          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+        </span>
         <button
           *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
           type="button"
