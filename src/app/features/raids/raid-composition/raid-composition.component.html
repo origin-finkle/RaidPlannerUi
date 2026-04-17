@@ -114,7 +114,7 @@
   </div>
 </div>
 
-<div style="background: #111; padding: 16px; border-radius: 8px;">
+<div class="composition-surface">
   <div class="manual-signup-bar" *ngIf="manualAddCandidates.length">
     <div class="manual-signup-bar__copy">
       <span class="composition-toolbar__eyebrow">Ajout manuel</span>
@@ -140,14 +140,14 @@
     </div>
   </div>
 
-  <h3 style="color: white;">Personnages disponibles</h3>
-  <p style="margin: 0 0 12px; color: rgba(255, 255, 255, 0.7); font-size: 13px;">
+  <h3 class="composition-surface__title">Personnages disponibles</h3>
+  <p class="composition-surface__hint">
     Clic rapide : ajoute un personnage dans la compo. Clique sur un personnage deja place pour le retirer.
   </p>
 
-  <div style="margin-bottom: 16px;">
-    <h4 style="color: skyblue;">Tanks</h4>
-    <div #tankContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+  <div class="roster-section">
+    <h4 class="roster-section__title roster-section__title--tank">Tanks</h4>
+    <div #tankContainer class="roster-grid">
       <div
         *ngFor="let p of availableTanks; trackBy: trackByNom"
         [attr.data-nom]="p.nom"
@@ -180,7 +180,7 @@
           </button>
         </div>
         <div class="available-character-tile__meta">
-          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="!p.main" class="tile-badge tile-badge--reroll">R</span>
           <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
             {{ getSignupSourceLabel(p.nom) }}
           </span>
@@ -201,9 +201,9 @@
     </div>
   </div>
 
-  <div style="margin-bottom: 16px;">
-    <h4 style="color: lightcoral;">DPS</h4>
-    <div #dpsContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+  <div class="roster-section">
+    <h4 class="roster-section__title roster-section__title--dps">DPS</h4>
+    <div #dpsContainer class="roster-grid">
       <div
         *ngFor="let p of availableDps; trackBy: trackByNom"
         [attr.data-nom]="p.nom"
@@ -236,7 +236,7 @@
           </button>
         </div>
         <div class="available-character-tile__meta">
-          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="!p.main" class="tile-badge tile-badge--reroll">R</span>
           <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
             {{ getSignupSourceLabel(p.nom) }}
           </span>
@@ -257,9 +257,9 @@
     </div>
   </div>
 
-  <div>
-    <h4 style="color: lightgreen;">Healers</h4>
-    <div #healContainer style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 100px;">
+  <div class="roster-section">
+    <h4 class="roster-section__title roster-section__title--heal">Healers</h4>
+    <div #healContainer class="roster-grid">
       <div
         *ngFor="let p of availableHeals; trackBy: trackByNom"
         [attr.data-nom]="p.nom"
@@ -292,7 +292,7 @@
           </button>
         </div>
         <div class="available-character-tile__meta">
-          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="!p.main" class="tile-badge tile-badge--reroll">R</span>
           <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
             {{ getSignupSourceLabel(p.nom) }}
           </span>
