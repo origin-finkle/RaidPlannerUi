@@ -24,37 +24,73 @@
     </div>
   </div>
 
-  <div class="admin-tabs">
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'dashboard'" (click)="selectTab('dashboard')">
-      Vue globale
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'roster'" (click)="selectTab('roster')">
-      Roster
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'health'" (click)="selectTab('health')">
-      Alertes
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'equity'" (click)="selectTab('equity')">
-      Equite
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'diagnostics'" (click)="selectTab('diagnostics')">
-      Diagnostics
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'reminders'" (click)="selectTab('reminders')">
-      Rappels
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'tests'" (click)="selectTab('tests')">
-      Tests
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'templates'" (click)="selectTab('templates')">
-      Templates
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'settings'" (click)="selectTab('settings')">
-      Reglages
-    </button>
-    <button type="button" class="admin-tab" [class.is-active]="activeTab === 'history'" (click)="selectTab('history')">
-      Historique
-    </button>
+  <div class="admin-nav">
+    <section class="admin-nav-group">
+      <div class="admin-nav-group__header">
+        <span class="admin-kicker">Pilotage</span>
+        <p>Surveille les raids, les alertes globales et l'historique officier.</p>
+      </div>
+      <div class="admin-nav-grid">
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'dashboard'" (click)="selectTab('dashboard')">
+          <strong>Vue globale</strong>
+          <span>Resume officier, scheduler auto et priorites du moment.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'health'" (click)="selectTab('health')">
+          <strong>Alertes planning</strong>
+          <span>Repere les raids vides, non publies ou en ecart.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'equity'" (click)="selectTab('equity')">
+          <strong>Equite joueurs</strong>
+          <span>Compare la repartition des soirs de raid et des roles.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'history'" (click)="selectTab('history')">
+          <strong>Historique Discord</strong>
+          <span>Retrouve les publications et mises a jour envoyees.</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="admin-nav-group">
+      <div class="admin-nav-group__header">
+        <span class="admin-kicker">Actions Discord</span>
+        <p>Travaille un raid cible, teste les messages et prepare les relances.</p>
+      </div>
+      <div class="admin-nav-grid">
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'diagnostics'" (click)="selectTab('diagnostics')">
+          <strong>Diagnostic source</strong>
+          <span>Compare la base, la source resolue et les snapshots du raid.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'reminders'" (click)="selectTab('reminders')">
+          <strong>Rappels non-inscrits</strong>
+          <span>Prepare une relance propre avant envoi sur Discord.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'tests'" (click)="selectTab('tests')">
+          <strong>Tests de publication</strong>
+          <span>Valide les embeds et messages sans polluer les vrais salons.</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="admin-nav-group">
+      <div class="admin-nav-group__header">
+        <span class="admin-kicker">Configuration</span>
+        <p>Gere le roster visible, les slots hebdo et les regles automatiques.</p>
+      </div>
+      <div class="admin-nav-grid">
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'roster'" (click)="selectTab('roster')">
+          <strong>Roster joueurs</strong>
+          <span>Edite les pseudos IHM et les fiches personnages.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'templates'" (click)="selectTab('templates')">
+          <strong>Templates hebdo</strong>
+          <span>Definis les raids publies automatiquement chaque semaine.</span>
+        </button>
+        <button type="button" class="admin-tab admin-tab--rich" [class.is-active]="activeTab === 'settings'" (click)="selectTab('settings')">
+          <strong>Reglages auto</strong>
+          <span>Regle le bot, les salons cibles et les comportements annexes.</span>
+        </button>
+      </div>
+    </section>
   </div>
 
   <ng-container *ngIf="activeTab === 'dashboard'">
