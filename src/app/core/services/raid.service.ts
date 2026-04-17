@@ -6,6 +6,7 @@ import {
   AutoComposeWeekRequestDTO,
   AutoComposeWeekResultDTO,
   BenchRecommendationDTO,
+  DiscordChannelOptionDTO,
   MissingRaidPingDTO,
   OfficerDashboardDTO,
   PlayerEquitySummaryDTO,
@@ -145,6 +146,10 @@ export class RaidService {
 
   getRaidTemplates(): Observable<RaidTemplateDTO[]> {
     return this.http.get<RaidTemplateDTO[]>('/api/raids/templates');
+  }
+
+  getWritableDiscordChannels(): Observable<DiscordChannelOptionDTO[]> {
+    return this.http.get<DiscordChannelOptionDTO[]>('/api/raids/discord/channels');
   }
 
   saveRaidTemplate(dto: RaidTemplateDTO): Observable<RaidTemplateDTO> {

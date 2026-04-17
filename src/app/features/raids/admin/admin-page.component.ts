@@ -7,6 +7,7 @@ import {
   AutoComposePreviewRaidDTO,
   AutoComposePreviewResultDTO,
   AutoComposeWeekRequestDTO,
+  DiscordChannelOptionDTO,
   JoueurDTO,
   MissingRaidPingDTO,
   OfficerDashboardDTO,
@@ -67,6 +68,7 @@ export class AdminPageComponent implements OnInit {
   publicationHistory: RaidPublicationHistoryDTO[] = [];
   raidTemplates: RaidTemplateDTO[] = [];
   raidSchedulerStatus: RaidSchedulerStatusDTO | null = null;
+  discordChannelOptions: DiscordChannelOptionDTO[] = [];
   schedulerDayOptions = [
     { value: 'MONDAY', label: 'Lundi' },
     { value: 'TUESDAY', label: 'Mardi' },
@@ -173,6 +175,7 @@ export class AdminPageComponent implements OnInit {
     this.loadRaids();
     this.loadOfficerDashboard();
     this.loadRaidSchedulerStatus();
+    this.loadDiscordChannelOptions();
     this.loadPlanningHealth();
     this.loadPublicationHistory();
     this.loadAutoComposeSettings();
@@ -225,6 +228,17 @@ export class AdminPageComponent implements OnInit {
       id,
       label: this.raidSchedulerStatus?.channelNames[index] || `#${id}`
     }));
+  }
+
+  get availableDiscordChannelOptions(): Array<{ id: string; label: string }> {
+    if (this.discordChannelOptions.length) {
+      return this.discordChannelOptions.map((channel) => ({
+        id: channel.id,
+        label: channel.label
+      }));
+    }
+
+    return this.schedulerChannelOptions;
   }
 
   get autoPublicationSlots(): AutoPublicationSlot[] {
@@ -429,6 +443,17 @@ export class AdminPageComponent implements OnInit {
         this.raidSchedulerStatus = null;
         this.schedulerErrorMessage = 'Impossible de charger le scheduler automatique.';
         this.isSchedulerLoading = false;
+      }
+    });
+  }
+
+  loadDiscordChannelOptions(): void {
+    this.raidService.getWritableDiscordChannels().subscribe({
+      next: (channels) => {
+        this.discordChannelOptions = channels;
+      },
+      error: () => {
+        this.discordChannelOptions = [];
       }
     });
   }
@@ -1250,7 +1275,7 @@ export class AdminPageComponent implements OnInit {
       nom: '',
       jourSemaine: 'WEDNESDAY',
       heure: '20:45',
-      channelId: this.schedulerChannelOptions[0]?.id || '',
+      channelId: this.availableDiscordChannelOptions[0]?.id || '',
       messageId: null,
       raidSize: 10,
       targetTanks: 2,
@@ -1284,7 +1309,7 @@ export class AdminPageComponent implements OnInit {
       return 'Salon non defini';
     }
 
-    const matching = this.schedulerChannelOptions.find((channel) => channel.id === channelId);
+    const matching = this.availableDiscordChannelOptions.find((channel) => channel.id === channelId);
     return matching?.label || `#${channelId}`;
   }
 

@@ -885,10 +885,12 @@
               </label>
               <label class="field">
                 <span>Salon de publication</span>
-                <select [(ngModel)]="templateDraft.channelId" class="admin-input">
-                  <option [ngValue]="''">Selectionne un salon</option>
-                  <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
-                </select>
+                <input
+                  [(ngModel)]="templateDraft.channelId"
+                  class="admin-input"
+                  list="discord-channel-options"
+                  placeholder="Colle un ID de salon ou choisis une suggestion"
+                />
               </label>
               <label class="field">
                 <span>Taille raid</span>
@@ -929,6 +931,9 @@
       </ng-container>
 
       <div class="feedback-banner" *ngIf="templateFeedback">{{ templateFeedback }}</div>
+      <datalist id="discord-channel-options">
+        <option *ngFor="let channel of availableDiscordChannelOptions" [value]="channel.id">{{ channel.label }}</option>
+      </datalist>
 
       <div class="scheduled-events-list" *ngIf="autoPublicationSlots.length; else noAutoPublicationSlots">
         <article class="scheduled-event-card" *ngFor="let slot of autoPublicationSlots">
@@ -1025,10 +1030,12 @@
               </label>
               <label class="field">
                 <span>Salon de publication</span>
-                <select [(ngModel)]="templateDraft.channelId" class="admin-input">
-                  <option [ngValue]="''">Selectionne un salon</option>
-                  <option *ngFor="let channel of schedulerChannelOptions" [ngValue]="channel.id">{{ channel.label }}</option>
-                </select>
+                <input
+                  [(ngModel)]="templateDraft.channelId"
+                  class="admin-input"
+                  list="discord-channel-options"
+                  placeholder="Colle un ID de salon ou choisis une suggestion"
+                />
               </label>
               <label class="field">
                 <span>Taille raid</span>

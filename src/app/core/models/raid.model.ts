@@ -206,6 +206,12 @@ export interface RaidSchedulerStatusDTO {
   channelNames: string[];
 }
 
+export interface DiscordChannelOptionDTO {
+  id: string;
+  name: string;
+  label: string;
+}
+
 export interface RaidPublicationComparisonDTO {
   raidId: number;
   raidNom: string;
