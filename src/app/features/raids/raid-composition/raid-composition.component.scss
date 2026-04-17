@@ -331,9 +331,11 @@
 .signup-source-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.14rem 0.38rem;
+  max-width: 100%;
+  flex-shrink: 0;
+  padding: 0.12rem 0.34rem;
   border-radius: 999px;
-  font-size: 0.65rem;
+  font-size: 0.56rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -359,6 +361,24 @@
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
+}
+
+.character-tile__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+}
+
+.character-tile__name {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .manual-remove-button:hover {
