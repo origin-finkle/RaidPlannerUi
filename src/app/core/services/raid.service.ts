@@ -105,6 +105,10 @@ export class RaidService {
     return this.http.post<MissingRaidPingDTO>(`/api/raids/${raidId}/missing-ping/test`, {});
   }
 
+  sendMissingPingToRaidChannel(raidId: number): Observable<MissingRaidPingDTO> {
+    return this.http.post<MissingRaidPingDTO>(`/api/raids/${raidId}/missing-ping/publish`, {});
+  }
+
   publishCustomSignupFlowToTestChannel(raidId: number): Observable<string> {
     return this.http.post(`/api/raids/${raidId}/signup-flow/test`, {}, { responseType: 'text' });
   }

@@ -109,6 +109,7 @@ export class AdminPageComponent implements OnInit {
   activeTemplateEditorId: number | 'new' | null = null;
 
   isBuildingMissingPing = false;
+  isSendingMissingPing = false;
   isSendingMissingPingToTest = false;
   isRescanningRaid = false;
   isPublishingCompositionTest = false;
@@ -847,6 +848,31 @@ export class AdminPageComponent implements OnInit {
       error: () => {
         this.isSendingMissingPingToTest = false;
         this.reminderFeedback = "Impossible d'envoyer le rappel sur le salon de test.";
+      }
+    });
+  }
+
+  sendMissingPingToRaidChannel(): void {
+    if (!this.selectedOperationalRaidId || this.isSendingMissingPing) {
+      return;
+    }
+
+    this.isSendingMissingPing = true;
+    this.reminderFeedback = null;
+
+    this.raidService.sendMissingPingToRaidChannel(this.selectedOperationalRaidId).subscribe({
+      next: (result: MissingRaidPingDTO) => {
+        this.isSendingMissingPing = false;
+        this.missingPingMessage = result.message;
+        this.missingPingPlayers = result.missingPlayers ?? [];
+        this.reminderPreview = result.message;
+        this.reminderFeedback = result.missingCount > 0
+          ? 'Le rappel a ete envoye dans le salon du raid.'
+          : result.message;
+      },
+      error: () => {
+        this.isSendingMissingPing = false;
+        this.reminderFeedback = "Impossible d'envoyer le rappel dans le salon du raid.";
       }
     });
   }

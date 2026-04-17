@@ -582,12 +582,19 @@
 
       <ng-container *ngIf="activeTab === 'reminders'">
         <div class="reminder-panel">
+          <div class="feedback-banner">
+            Le rappel auto part tous les jeudis a 21:00 pour la semaine suivante. Ici, tu peux soit preparer le message, soit le tester, soit le forcer tout de suite dans le salon du raid.
+          </div>
+
           <div class="reminder-actions">
-            <button type="button" class="button button--secondary" [disabled]="!selectedOperationalRaidId || isBuildingMissingPing" (click)="buildMissingPingForSelectedRaid()">
-              {{ isBuildingMissingPing ? 'Preparation...' : 'Copier le rappel' }}
+            <button type="button" class="button button--primary" [disabled]="!selectedOperationalRaidId || isSendingMissingPing" (click)="sendMissingPingToRaidChannel()">
+              {{ isSendingMissingPing ? 'Envoi...' : 'Envoyer maintenant sur le salon du raid' }}
             </button>
-            <button type="button" class="button button--primary" [disabled]="!selectedOperationalRaidId || isSendingMissingPingToTest" (click)="sendMissingPingToTestChannel()">
-              {{ isSendingMissingPingToTest ? 'Envoi...' : 'Envoyer sur salon test' }}
+            <button type="button" class="button button--secondary" [disabled]="!selectedOperationalRaidId || isBuildingMissingPing" (click)="buildMissingPingForSelectedRaid()">
+              {{ isBuildingMissingPing ? 'Preparation...' : 'Preparer et copier le message' }}
+            </button>
+            <button type="button" class="button button--ghost" [disabled]="!selectedOperationalRaidId || isSendingMissingPingToTest" (click)="sendMissingPingToTestChannel()">
+              {{ isSendingMissingPingToTest ? 'Envoi...' : 'Tester sur salon test' }}
             </button>
           </div>
 
@@ -596,7 +603,7 @@
             <pre>{{ reminderPreview }}</pre>
           </div>
           <ng-template #reminderEmpty>
-            <div class="diagnostic-empty">Genere un rappel pour voir le message et la liste des non-inscrits.</div>
+            <div class="diagnostic-empty">Choisis une action ci-dessus pour generer le rappel et voir la liste des non-inscrits.</div>
           </ng-template>
 
           <div class="reminder-missing" *ngIf="missingPingPlayers.length">
