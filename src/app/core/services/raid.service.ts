@@ -49,6 +49,10 @@ export class RaidService {
     return this.http.post<RaidDTO>('/api/raids', dto);
   }
 
+  deleteRaid(raidId: number): Observable<void> {
+    return this.http.delete<void>(`/api/raids/${raidId}`);
+  }
+
   getRaidDiagnostic(raidId: number): Observable<RaidDiagnosticDTO> {
     return this.http.get<RaidDiagnosticDTO>(`/api/raids/${raidId}/diagnostic`);
   }

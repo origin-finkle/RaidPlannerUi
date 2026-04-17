@@ -71,6 +71,7 @@ export class RaidsPageComponent implements OnInit {
   selectedWeekView: 'current' | 'next' = 'current';
   isCreateRaidPanelOpen = false;
   isCreatingRaid = false;
+  isDeletingRaid = false;
   autoComposeConfig: AutoComposeWeekRequestDTO = {
     maxRaids: 2,
     targetTanks: 2,
@@ -154,6 +155,36 @@ export class RaidsPageComponent implements OnInit {
       error: (error) => {
         this.isCreatingRaid = false;
         this.createRaidMessage = error?.error?.message || (typeof error?.error === 'string' ? error.error : "Impossible de creer ce raid.");
+      }
+    });
+  }
+
+  deleteSelectedRaid(): void {
+    if (!this.selectedRaid || this.isDeletingRaid) {
+      return;
+    }
+
+    const raidToDelete = this.selectedRaid;
+    const currentDayDate = this.selectedDay?.date ?? null;
+    const confirmed = window.confirm(`Supprimer definitivement le raid "${raidToDelete.nom}" ?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.isDeletingRaid = true;
+    this.autoComposeMessage = null;
+    this.autoComposeWarnings = [];
+
+    this.raidService.deleteRaid(raidToDelete.id).subscribe({
+      next: () => {
+        this.isDeletingRaid = false;
+        this.autoComposeMessage = `Raid "${raidToDelete.nom}" supprime.`;
+        this.loadRaids(currentDayDate, null);
+      },
+      error: () => {
+        this.isDeletingRaid = false;
+        this.autoComposeMessage = "Impossible de supprimer ce raid.";
+        this.autoComposeWarnings = [];
       }
     });
   }
@@ -922,6 +953,7 @@ export class RaidsPageComponent implements OnInit {
       error: () => {
         this.isAutoComposing = false;
         this.isPreviewingAutoCompose = false;
+        this.isDeletingRaid = false;
       }
     });
   }
