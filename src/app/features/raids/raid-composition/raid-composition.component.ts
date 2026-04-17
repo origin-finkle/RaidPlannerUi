@@ -20,6 +20,11 @@ import { RaidService } from '../../../core/services/raid.service';
 import Sortable from 'sortablejs';
 
 type BuffDefinitions = Record<string, BuffProvider[]>;
+type CoverageSummary = {
+  counts: Record<string, number>;
+  activeProviders: Record<string, string[]>;
+  possibleProviders: Record<string, string[]>;
+};
 
 @Component({
   selector: 'app-raid-composition',
@@ -224,16 +229,16 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   coveredRaidBuffs: Record<string, number> = {};
   coveredRaidDebuffs: Record<string, number> = {};
   coveredUtilities: Record<string, number> = {};
+  private raidBuffCoverageSummary: CoverageSummary = { counts: {}, activeProviders: {}, possibleProviders: {} };
+  private raidDebuffCoverageSummary: CoverageSummary = { counts: {}, activeProviders: {}, possibleProviders: {} };
+  private utilityCoverageSummary: CoverageSummary = { counts: {}, activeProviders: {}, possibleProviders: {} };
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['group1FromRaid'] || changes['group2FromRaid'] || changes['joueurs'] || changes['compositionLocked']) {
       this.group1 = [...(this.group1FromRaid || [])];
       this.group2 = [...(this.group2FromRaid || [])];
 
-      const allCharacters = [...this.group1, ...this.group2];
-      this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
-      this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
-      this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
+      this.refreshCoverageSummaries();
       this.computeAvailable();
       this.scheduleSortableRefresh();
     }
@@ -315,11 +320,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     this.group1 = this.extractCharacters(this.group1Container.nativeElement).slice(0, 5);
     this.group2 = this.extractCharacters(this.group2Container.nativeElement).slice(0, 5);
 
-    const allCharacters = [...this.group1, ...this.group2];
-    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
-    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
-    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
-
+    this.refreshCoverageSummaries();
     this.computeAvailable();
     this.emitComposition();
   }
@@ -473,10 +474,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   private afterManualCompositionChange(): void {
-    const allCharacters = [...this.group1, ...this.group2];
-    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, allCharacters);
-    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, allCharacters);
-    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, allCharacters);
+    this.refreshCoverageSummaries();
     this.computeAvailable();
     this.cdr.detectChanges();
     this.scheduleSortableRefresh();
@@ -530,15 +528,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   getBuffCoverage(definitions: BuffDefinitions, characters: PersonnageDTO[]): Record<string, number> {
-    const coverage: Record<string, number> = {};
-
-    for (const buff of Object.keys(definitions)) {
-      coverage[buff] = characters.filter((character) =>
-        definitions[buff].some((provider) => this.matchesProvider(character, provider))
-      ).length;
-    }
-
-    return coverage;
+    return this.computeCoverageSummary(definitions, characters).counts;
   }
 
   private matchesProvider(character: PersonnageDTO, provider: BuffProvider): boolean {
@@ -563,21 +553,24 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   getBuffProviders(buff: string): string[] {
-    const providers = this.raidBuffDefinitions[buff] || [];
-    const activeProviders = this.getActiveProviderLabels(providers);
-    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+    const activeProviders = this.raidBuffCoverageSummary.activeProviders[buff] || [];
+    return activeProviders.length > 0
+      ? activeProviders
+      : (this.raidBuffCoverageSummary.possibleProviders[buff] || []);
   }
 
   getDebuffProviders(debuff: string): string[] {
-    const providers = this.raidDebuffDefinitions[debuff] || [];
-    const activeProviders = this.getActiveProviderLabels(providers);
-    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+    const activeProviders = this.raidDebuffCoverageSummary.activeProviders[debuff] || [];
+    return activeProviders.length > 0
+      ? activeProviders
+      : (this.raidDebuffCoverageSummary.possibleProviders[debuff] || []);
   }
 
   getUtilityProviders(utility: string): string[] {
-    const providers = this.utilityDefinitions[utility] || [];
-    const activeProviders = this.getActiveProviderLabels(providers);
-    return activeProviders.length > 0 ? activeProviders : this.getPossibleProviderLabels(providers);
+    const activeProviders = this.utilityCoverageSummary.activeProviders[utility] || [];
+    return activeProviders.length > 0
+      ? activeProviders
+      : (this.utilityCoverageSummary.possibleProviders[utility] || []);
   }
 
   getSpecIcon(spec: string | undefined, classe: string | undefined): string | null {
@@ -652,9 +645,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     this.group1 = [];
     this.group2 = [];
 
-    this.coveredRaidBuffs = this.getBuffCoverage(this.raidBuffDefinitions, []);
-    this.coveredRaidDebuffs = this.getBuffCoverage(this.raidDebuffDefinitions, []);
-    this.coveredUtilities = this.getBuffCoverage(this.utilityDefinitions, []);
+    this.refreshCoverageSummaries();
 
     this.computeAvailable();
     this.cdr.detectChanges();
@@ -698,6 +689,72 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
       const spec = this.formatDisplayName(character.specialisation);
       return `${character.nom} - ${classe}${spec ? ` ${spec}` : ''}`;
     });
+  }
+
+  private refreshCoverageSummaries(): void {
+    const allCharacters = [...this.group1, ...this.group2];
+    this.raidBuffCoverageSummary = this.computeCoverageSummary(this.raidBuffDefinitions, allCharacters);
+    this.raidDebuffCoverageSummary = this.computeCoverageSummary(this.raidDebuffDefinitions, allCharacters);
+    this.utilityCoverageSummary = this.computeCoverageSummary(this.utilityDefinitions, allCharacters);
+    this.coveredRaidBuffs = this.raidBuffCoverageSummary.counts;
+    this.coveredRaidDebuffs = this.raidDebuffCoverageSummary.counts;
+    this.coveredUtilities = this.utilityCoverageSummary.counts;
+  }
+
+  private computeCoverageSummary(definitions: BuffDefinitions, characters: PersonnageDTO[]): CoverageSummary {
+    const counts: Record<string, number> = {};
+    const activeProviders: Record<string, string[]> = {};
+    const possibleProviders: Record<string, string[]> = {};
+    const hunterAssignments = new Set<string>();
+
+    for (const buff of Object.keys(definitions)) {
+      const providers = definitions[buff] || [];
+      const naturalProviders = characters.filter((character) =>
+        providers.some((provider) => !this.isHunterFallbackProvider(provider) && this.matchesProvider(character, provider))
+      );
+
+      const directLabels = naturalProviders.map((character) => this.formatCharacterProviderLabel(character));
+      counts[buff] = directLabels.length;
+      activeProviders[buff] = directLabels;
+      possibleProviders[buff] = this.getPossibleProviderLabels(providers);
+    }
+
+    for (const buff of Object.keys(definitions)) {
+      if ((counts[buff] || 0) > 0) {
+        continue;
+      }
+
+      const providers = definitions[buff] || [];
+      if (!providers.some((provider) => this.isHunterFallbackProvider(provider))) {
+        continue;
+      }
+
+      const availableHunter = characters.find((character) =>
+        this.normalizeClassName(character.classe) === 'chasseur'
+        && !hunterAssignments.has(character.nom)
+        && providers.some((provider) => this.isHunterFallbackProvider(provider) && this.matchesProvider(character, provider))
+      );
+
+      if (!availableHunter) {
+        continue;
+      }
+
+      hunterAssignments.add(availableHunter.nom);
+      counts[buff] = 1;
+      activeProviders[buff] = [this.formatCharacterProviderLabel(availableHunter) + ' · Pet manquant'];
+    }
+
+    return { counts, activeProviders, possibleProviders };
+  }
+
+  private isHunterFallbackProvider(provider: BuffProvider): boolean {
+    return this.normalizeClassName(provider.classe) === 'chasseur';
+  }
+
+  private formatCharacterProviderLabel(character: PersonnageDTO): string {
+    const classe = this.formatDisplayName(character.classe);
+    const spec = this.formatDisplayName(character.specialisation);
+    return `${character.nom} - ${classe}${spec ? ` ${spec}` : ''}`;
   }
 
   private getPossibleProviderLabels(providers: BuffProvider[]): string[] {
