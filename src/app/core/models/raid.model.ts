@@ -47,6 +47,12 @@ export interface RaidCompositionDTO {
   group2: PersonnageDTO[];
 }
 
+export interface CreateRaidRequestDTO {
+  nom: string;
+  date: string;
+  channelId: string;
+}
+
 export interface AutoComposeWeekResultDTO {
   selectedRaidIds: number[];
   updatedRaidIds: number[];

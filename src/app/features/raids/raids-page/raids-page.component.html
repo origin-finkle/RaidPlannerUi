@@ -6,6 +6,11 @@
       <p>
         Choisis un soir, ajuste les groupes et garde la rotation sous controle.
       </p>
+      <div class="panel__actions raids-hero__actions">
+        <button type="button" class="action-button" (click)="openCreateRaidPanel()">
+          Creer un raid
+        </button>
+      </div>
     </div>
 
     <div class="raids-stats">
@@ -27,6 +32,61 @@
       </div>
     </div>
   </div>
+
+  <div class="panel panel--subtle" *ngIf="isCreateRaidPanelOpen">
+    <div class="panel__header">
+      <div>
+        <span class="panel__eyebrow">Creation manuelle</span>
+        <h2>Nouveau raid ponctuel</h2>
+      </div>
+      <div class="panel__actions">
+        <button type="button" class="action-button action-button--secondary" (click)="closeCreateRaidPanel()">
+          Fermer
+        </button>
+      </div>
+    </div>
+
+    <div class="auto-compose-config">
+      <div class="auto-compose-config__grid">
+        <label class="config-field">
+          <span>Nom du raid</span>
+          <input type="text" [(ngModel)]="createRaidDraft.nom">
+        </label>
+        <label class="config-field">
+          <span>Date</span>
+          <input type="datetime-local" [(ngModel)]="createRaidDraft.date">
+        </label>
+        <label class="config-field">
+          <span>Salon Discord</span>
+          <input
+            type="text"
+            [(ngModel)]="createRaidDraft.channelId"
+            list="raid-channel-options"
+            placeholder="ID de salon ou suggestion"
+          >
+        </label>
+      </div>
+
+      <div class="panel__actions">
+        <button
+          type="button"
+          class="action-button"
+          [disabled]="!canSubmitCreateRaid"
+          (click)="createManualRaid()"
+        >
+          {{ isCreatingRaid ? 'Creation...' : 'Creer le raid' }}
+        </button>
+      </div>
+
+      <div class="auto-compose-feedback" *ngIf="createRaidMessage">
+        <p class="auto-compose-feedback__message">{{ createRaidMessage }}</p>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="raid-channel-options">
+    <option *ngFor="let channel of availableDiscordChannelOptions" [value]="channel.id">{{ channel.label }}</option>
+  </datalist>
 
   <div class="raids-toolbar" *ngIf="groupedRaids.length; else emptyState">
     <div class="panel panel--subtle">
@@ -531,6 +591,11 @@
   <section class="panel panel--empty">
     <span class="panel__eyebrow">Aucun raid sur cette semaine</span>
     <h2>Aucun raid pour cette vue</h2>
-    <p>Change de semaine ou relance l'import Discord pour recuperer les prochains raids.</p>
+    <p>Change de semaine ou cree directement un raid ponctuel pour commencer.</p>
+    <div class="panel__actions" style="justify-content:center; margin-top: 1rem;">
+      <button type="button" class="action-button" (click)="openCreateRaidPanel()">
+        Creer un raid
+      </button>
+    </div>
   </section>
 </ng-template>

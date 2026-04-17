@@ -6,6 +6,7 @@ import {
   AutoComposeWeekRequestDTO,
   AutoComposeWeekResultDTO,
   BenchRecommendationDTO,
+  CreateRaidRequestDTO,
   DiscordChannelOptionDTO,
   MissingRaidPingDTO,
   OfficerDashboardDTO,
@@ -14,6 +15,7 @@ import {
   RaidConfirmationSummaryDTO,
   RaidCompositionStateDTO,
   RaidDiagnosticDTO,
+  RaidDTO,
   RaidPublicationComparisonDTO,
   RaidCompositionDTO,
   RaidDayResponse,
@@ -41,6 +43,10 @@ export class RaidService {
 
   getGroupedRaids(): Observable<RaidDayResponse[]> {
     return this.http.get<RaidDayResponse[]>('/api/raids');
+  }
+
+  createManualRaid(dto: CreateRaidRequestDTO): Observable<RaidDTO> {
+    return this.http.post<RaidDTO>('/api/raids', dto);
   }
 
   getRaidDiagnostic(raidId: number): Observable<RaidDiagnosticDTO> {

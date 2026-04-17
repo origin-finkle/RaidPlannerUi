@@ -10,6 +10,8 @@ import {
   AutoComposeWeekRequestDTO,
   AutoComposeWeekResultDTO,
   BenchRecommendationDTO,
+  CreateRaidRequestDTO,
+  DiscordChannelOptionDTO,
   JoueurDTO,
   RaidTemplateDTO,
   RaidConfirmationSummaryDTO,
@@ -62,9 +64,13 @@ export class RaidsPageComponent implements OnInit {
   comparisonErrorMessage: string | null = null;
   confirmationErrorMessage: string | null = null;
   benchErrorMessage: string | null = null;
+  createRaidMessage: string | null = null;
   templates: RaidTemplateDTO[] = [];
+  discordChannelOptions: DiscordChannelOptionDTO[] = [];
   selectedTemplateId: number | null = null;
   selectedWeekView: 'current' | 'next' = 'current';
+  isCreateRaidPanelOpen = false;
+  isCreatingRaid = false;
   autoComposeConfig: AutoComposeWeekRequestDTO = {
     maxRaids: 2,
     targetTanks: 2,
@@ -74,6 +80,7 @@ export class RaidsPageComponent implements OnInit {
     prioritizeBuffCoverage: true,
     huntersFillMissingBuffs: true
   };
+  createRaidDraft: CreateRaidRequestDTO = this.buildCreateRaidDraft();
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -91,8 +98,64 @@ export class RaidsPageComponent implements OnInit {
 
     this.loadAutoComposeDefaults();
     this.loadTemplates();
+    this.loadDiscordChannels();
     this.loadAllJoueurs();
     this.loadRaids(this.initialPreferredDayDate, this.initialPreferredRaidId);
+  }
+
+  get canSubmitCreateRaid(): boolean {
+    return !this.isCreatingRaid
+      && !!this.createRaidDraft.nom?.trim()
+      && !!this.createRaidDraft.date?.trim()
+      && !!this.createRaidDraft.channelId?.trim();
+  }
+
+  get availableDiscordChannelOptions(): Array<{ id: string; label: string }> {
+    return this.discordChannelOptions.map((channel) => ({
+      id: channel.id,
+      label: channel.label
+    }));
+  }
+
+  openCreateRaidPanel(): void {
+    this.isCreateRaidPanelOpen = true;
+    this.createRaidMessage = null;
+    this.createRaidDraft = this.buildCreateRaidDraft();
+  }
+
+  closeCreateRaidPanel(): void {
+    this.isCreateRaidPanelOpen = false;
+    this.isCreatingRaid = false;
+    this.createRaidMessage = null;
+    this.createRaidDraft = this.buildCreateRaidDraft();
+  }
+
+  createManualRaid(): void {
+    if (!this.canSubmitCreateRaid) {
+      return;
+    }
+
+    this.isCreatingRaid = true;
+    this.createRaidMessage = null;
+
+    this.raidService.createManualRaid({
+      nom: this.createRaidDraft.nom.trim(),
+      date: this.createRaidDraft.date,
+      channelId: this.createRaidDraft.channelId.trim()
+    }).subscribe({
+      next: (createdRaid) => {
+        const raidDate = createdRaid.heure.slice(0, 10);
+        this.selectedWeekView = this.resolveWeekViewForDate(raidDate);
+        this.isCreatingRaid = false;
+        this.isCreateRaidPanelOpen = false;
+        this.createRaidMessage = `Raid "${createdRaid.nom}" cree.`;
+        this.loadRaids(raidDate, createdRaid.id);
+      },
+      error: (error) => {
+        this.isCreatingRaid = false;
+        this.createRaidMessage = error?.error?.message || (typeof error?.error === 'string' ? error.error : "Impossible de creer ce raid.");
+      }
+    });
   }
 
   selectDay(day: RaidDayResponse): void {
@@ -954,6 +1017,23 @@ export class RaidsPageComponent implements OnInit {
     });
   }
 
+  private loadDiscordChannels(): void {
+    this.raidService.getWritableDiscordChannels().subscribe({
+      next: (channels) => {
+        this.discordChannelOptions = channels ?? [];
+        if (!this.createRaidDraft.channelId && this.discordChannelOptions.length) {
+          this.createRaidDraft = {
+            ...this.createRaidDraft,
+            channelId: this.discordChannelOptions[0].id
+          };
+        }
+      },
+      error: () => {
+        this.discordChannelOptions = [];
+      }
+    });
+  }
+
   private loadAllJoueurs(): void {
     this.joueurService.getJoueurs().subscribe({
       next: (joueurs) => {
@@ -1041,6 +1121,20 @@ export class RaidsPageComponent implements OnInit {
     return `Compos generees pour ${raidCount} raids.`;
   }
 
+  private buildCreateRaidDraft(): CreateRaidRequestDTO {
+    const selectedDate = this.selectedDay?.date ?? this.toDayKey(this.getDisplayedWeekRange().start);
+    const matchingTemplate = this.findTemplateForDate(selectedDate);
+
+    return {
+      nom: matchingTemplate?.nom ?? this.buildDefaultRaidName(selectedDate),
+      date: this.combineDateAndTime(
+        selectedDate,
+        matchingTemplate?.heure ?? this.selectedRaid?.heure?.slice(11, 16) ?? '20:45'
+      ),
+      channelId: matchingTemplate?.channelId ?? this.discordChannelOptions[0]?.id ?? ''
+    };
+  }
+
   private resetAutoComposePreview(): void {
     this.autoComposePreview = [];
     this.autoComposePreviewWarnings = [];
@@ -1056,6 +1150,33 @@ export class RaidsPageComponent implements OnInit {
       day: 'numeric',
       month: 'short'
     });
+  }
+
+  private findTemplateForDate(dateString: string): RaidTemplateDTO | undefined {
+    const date = this.parseDayDate(dateString);
+    const dayMap = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const targetDay = dayMap[date.getDay()];
+
+    return this.templates.find((template) => this.normalizeValue(template.jourSemaine) === this.normalizeValue(targetDay));
+  }
+
+  private buildDefaultRaidName(dateString: string): string {
+    const date = this.parseDayDate(dateString);
+    const weekday = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+    return `Raid du ${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}`;
+  }
+
+  private combineDateAndTime(dateString: string, timeString: string): string {
+    const time = /^\d{2}:\d{2}$/.test(timeString) ? timeString : '20:45';
+    return `${dateString}T${time}:00`;
+  }
+
+  private resolveWeekViewForDate(dateString: string): 'current' | 'next' {
+    const date = this.parseDayDate(dateString);
+    const currentWeekStart = this.getResetWeekStart(new Date());
+    const nextWeekStart = new Date(currentWeekStart);
+    nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+    return date >= nextWeekStart ? 'next' : 'current';
   }
 
   private syncRouteSelection(): void {
