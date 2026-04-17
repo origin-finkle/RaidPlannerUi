@@ -333,12 +333,13 @@
   align-items: center;
   max-width: 100%;
   flex-shrink: 0;
-  padding: 0.12rem 0.34rem;
+  padding: 0.16rem 0.42rem;
   border-radius: 999px;
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .signup-source-badge--manual {
@@ -379,6 +380,51 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.available-character-tile {
+  width: 164px;
+  min-height: 68px;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.available-character-tile__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.available-character-tile__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.available-character-tile__identity .character-tile__name {
+  flex: 1;
+}
+
+.available-character-tile__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.available-character-tile .manual-remove-button {
+  flex-shrink: 0;
 }
 
 .manual-remove-button:hover {

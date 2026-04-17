@@ -157,42 +157,45 @@
         [style.cursor]="compositionLocked ? 'default' : 'pointer'"
         [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
         (click)="addCharacterToComposition(p)"
-        style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+        class="available-character-tile"
       >
-        <img
-          *ngIf="getSpecIcon(p.specialisation, p.classe)"
-          [src]="getSpecIcon(p.specialisation, p.classe)"
-          alt="{{ p.specialisation }}"
-          style="width: 16px; height: 16px;"
-        />
-        <span class="character-tile__name">{{ p.nom }}</span>
-        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
-        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
-          {{ getSignupSourceLabel(p.nom) }}
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
-          <span class="status-dot yellow"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
-          <span class="status-dot orange"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
-          <span class="status-dot red"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <button
-          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
-          type="button"
-          class="manual-remove-button"
-          title="Retirer cet ajout manuel du raid"
-          (click)="removeManualSignup(p, $event)"
-        >
-          ×
-        </button>
-        <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {{ getTentativeReasonForCharacter(p.nom) }}
+        <div class="available-character-tile__top">
+          <div class="available-character-tile__identity">
+            <img
+              *ngIf="getSpecIcon(p.specialisation, p.classe)"
+              [src]="getSpecIcon(p.specialisation, p.classe)"
+              alt="{{ p.specialisation }}"
+              style="width: 16px; height: 16px;"
+            />
+            <span class="character-tile__name">{{ p.nom }}</span>
+          </div>
+          <button
+            *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+            type="button"
+            class="manual-remove-button"
+            title="Retirer cet ajout manuel du raid"
+            (click)="removeManualSignup(p, $event)"
+          >
+            ×
+          </button>
+        </div>
+        <div class="available-character-tile__meta">
+          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+            {{ getSignupSourceLabel(p.nom) }}
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+            <span class="status-dot yellow"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+            <span class="status-dot orange"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+            <span class="status-dot red"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -210,42 +213,45 @@
         [style.cursor]="compositionLocked ? 'default' : 'pointer'"
         [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
         (click)="addCharacterToComposition(p)"
-        style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+        class="available-character-tile"
       >
-        <img
-          *ngIf="getSpecIcon(p.specialisation, p.classe)"
-          [src]="getSpecIcon(p.specialisation, p.classe)"
-          alt="{{ p.specialisation }}"
-          style="width: 16px; height: 16px;"
-        />
-        <span class="character-tile__name">{{ p.nom }}</span>
-        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
-        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
-          {{ getSignupSourceLabel(p.nom) }}
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
-          <span class="status-dot yellow"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
-          <span class="status-dot orange"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
-          <span class="status-dot red"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <button
-          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
-          type="button"
-          class="manual-remove-button"
-          title="Retirer cet ajout manuel du raid"
-          (click)="removeManualSignup(p, $event)"
-        >
-          ×
-        </button>
-        <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {{ getTentativeReasonForCharacter(p.nom) }}
+        <div class="available-character-tile__top">
+          <div class="available-character-tile__identity">
+            <img
+              *ngIf="getSpecIcon(p.specialisation, p.classe)"
+              [src]="getSpecIcon(p.specialisation, p.classe)"
+              alt="{{ p.specialisation }}"
+              style="width: 16px; height: 16px;"
+            />
+            <span class="character-tile__name">{{ p.nom }}</span>
+          </div>
+          <button
+            *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+            type="button"
+            class="manual-remove-button"
+            title="Retirer cet ajout manuel du raid"
+            (click)="removeManualSignup(p, $event)"
+          >
+            ×
+          </button>
+        </div>
+        <div class="available-character-tile__meta">
+          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+            {{ getSignupSourceLabel(p.nom) }}
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+            <span class="status-dot yellow"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+            <span class="status-dot orange"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+            <span class="status-dot red"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -263,42 +269,45 @@
         [style.cursor]="compositionLocked ? 'default' : 'pointer'"
         [title]="compositionLocked ? '' : 'Cliquer pour ajouter a la compo'"
         (click)="addCharacterToComposition(p)"
-        style="width: 150px; height: 60px; border-radius: 6px; padding: 6px; text-align: center; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px;"
+        class="available-character-tile"
       >
-        <img
-          *ngIf="getSpecIcon(p.specialisation, p.classe)"
-          [src]="getSpecIcon(p.specialisation, p.classe)"
-          alt="{{ p.specialisation }}"
-          style="width: 16px; height: 16px;"
-        />
-        <span class="character-tile__name">{{ p.nom }}</span>
-        <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
-        <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
-          {{ getSignupSourceLabel(p.nom) }}
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
-          <span class="status-dot yellow"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
-          <span class="status-dot orange"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
-          <span class="status-dot red"></span>
-          <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
-        </span>
-        <button
-          *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
-          type="button"
-          class="manual-remove-button"
-          title="Retirer cet ajout manuel du raid"
-          (click)="removeManualSignup(p, $event)"
-        >
-          ×
-        </button>
-        <div *ngIf="isOfficer && getTentativeReasonForCharacter(p.nom)" style="font-size: 10px; opacity: 0.8; width: 100%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          {{ getTentativeReasonForCharacter(p.nom) }}
+        <div class="available-character-tile__top">
+          <div class="available-character-tile__identity">
+            <img
+              *ngIf="getSpecIcon(p.specialisation, p.classe)"
+              [src]="getSpecIcon(p.specialisation, p.classe)"
+              alt="{{ p.specialisation }}"
+              style="width: 16px; height: 16px;"
+            />
+            <span class="character-tile__name">{{ p.nom }}</span>
+          </div>
+          <button
+            *ngIf="isOfficer && isManualSignupCharacter(p.nom)"
+            type="button"
+            class="manual-remove-button"
+            title="Retirer cet ajout manuel du raid"
+            (click)="removeManualSignup(p, $event)"
+          >
+            ×
+          </button>
+        </div>
+        <div class="available-character-tile__meta">
+          <span *ngIf="!p.main" class="text-xs bg-gray-500 text-white px-1 py-0.5 rounded">R</span>
+          <span *ngIf="getSignupSourceLabel(p.nom)" class="signup-source-badge signup-source-badge--manual">
+            {{ getSignupSourceLabel(p.nom) }}
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'TENTATIVE'" class="status-tooltip">
+            <span class="status-dot yellow"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'BENCH'" class="status-tooltip">
+            <span class="status-dot orange"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
+          <span *ngIf="getStatutParticipationForCharacter(p.nom) === 'LATE'" class="status-tooltip">
+            <span class="status-dot red"></span>
+            <span class="status-tooltip__content">{{ getParticipationTitle(p.nom) }}</span>
+          </span>
         </div>
       </div>
     </div>
