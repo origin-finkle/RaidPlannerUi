@@ -806,7 +806,9 @@ export class RaidsPageComponent implements OnInit {
   }
 
   private sortGroupedRaidsByResetWeek(days: RaidDayResponse[]): RaidDayResponse[] {
-    return [...days].sort((left, right) => {
+    return days
+      .map((day) => this.deduplicateDayRaids(day))
+      .sort((left, right) => {
       const leftDate = this.parseDayDate(left.date);
       const rightDate = this.parseDayDate(right.date);
       const leftWeekStart = this.getResetWeekStart(leftDate);
@@ -819,6 +821,62 @@ export class RaidsPageComponent implements OnInit {
 
       return this.getResetDayIndex(leftDate) - this.getResetDayIndex(rightDate);
     });
+  }
+
+  private deduplicateDayRaids(day: RaidDayResponse): RaidDayResponse {
+    const bestRaidByKey = new Map<string, RaidDTO>();
+
+    for (const raid of day.raids ?? []) {
+      const key = this.buildRaidDedupKey(raid);
+      const current = bestRaidByKey.get(key);
+      if (!current || this.compareRaidDisplayPriority(raid, current) < 0) {
+        bestRaidByKey.set(key, raid);
+      }
+    }
+
+    return {
+      ...day,
+      raids: Array.from(bestRaidByKey.values()).sort((left, right) => {
+        const leftTime = new Date(left.heure).getTime();
+        const rightTime = new Date(right.heure).getTime();
+        if (leftTime !== rightTime) {
+          return leftTime - rightTime;
+        }
+        return (left.id ?? Number.MAX_SAFE_INTEGER) - (right.id ?? Number.MAX_SAFE_INTEGER);
+      })
+    };
+  }
+
+  private buildRaidDedupKey(raid: RaidDTO): string {
+    return `${this.normalizeValue(raid.nom)}|${raid.heure}`;
+  }
+
+  private compareRaidDisplayPriority(left: RaidDTO, right: RaidDTO): number {
+    const leftScore = this.raidDisplayPriority(left);
+    const rightScore = this.raidDisplayPriority(right);
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+
+    const leftId = left.id ?? Number.MAX_SAFE_INTEGER;
+    const rightId = right.id ?? Number.MAX_SAFE_INTEGER;
+    return leftId - rightId;
+  }
+
+  private raidDisplayPriority(raid: RaidDTO): number {
+    let score = 0;
+    if (raid.lastPublishedAt) {
+      score += 4;
+    }
+    if (raid.compositionStatus === 'PUBLISHED') {
+      score += 3;
+    } else if (raid.compositionStatus === 'READY') {
+      score += 2;
+    }
+    if (raid.compositionLocked) {
+      score += 1;
+    }
+    return score;
   }
 
   private getResetWeekStart(date: Date): Date {
