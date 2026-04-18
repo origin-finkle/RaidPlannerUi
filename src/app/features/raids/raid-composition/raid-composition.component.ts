@@ -365,7 +365,9 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   private flattenCharacters(joueurs: JoueurDTO[]): PersonnageDTO[] {
-    return joueurs.flatMap((joueur) => this.getDisplayCharactersForJoueur(joueur));
+    return joueurs
+      .filter((joueur) => joueur.statutParticipation !== 'ABSENCE')
+      .flatMap((joueur) => this.getDisplayCharactersForJoueur(joueur));
   }
 
   private getLastRaidResetDate(): Date {
