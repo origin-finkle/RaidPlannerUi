@@ -1005,9 +1005,6 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     if (!joueur) {
       return null;
     }
-    if (joueur.id != null) {
-      return `id:${joueur.id}`;
-    }
 
     const serverPseudo = this.normalizeValue(joueur.serverPseudo);
     if (serverPseudo) {
@@ -1017,6 +1014,10 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     const pseudo = this.normalizeValue(joueur.pseudo);
     if (pseudo) {
       return `pseudo:${pseudo}`;
+    }
+
+    if (joueur.id != null) {
+      return `id:${joueur.id}`;
     }
 
     return null;
