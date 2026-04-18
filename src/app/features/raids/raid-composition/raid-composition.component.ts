@@ -343,7 +343,8 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   private computeAvailable(): void {
-    const allCharacters = this.flattenCharacters(this.joueurs);
+    const canonicalJoueurs = this.getCanonicalRaidParticipants();
+    const allCharacters = this.flattenCharacters(canonicalJoueurs);
 
     const assignedPseudos = new Set(
       [...this.group1, ...this.group2]
@@ -484,7 +485,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   private findJoueurByPersonnage(nom: string): JoueurDTO | undefined {
-    return this.joueurs.find(
+    return this.getCanonicalRaidParticipants().find(
       (joueur) =>
           joueur.personnageMain?.nom === nom || joueur.rerolls?.some((reroll) => reroll.nom === nom)
     );
@@ -585,19 +586,11 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   }
 
   getStatutParticipationForCharacter(nomPerso: string): string | null {
-    const joueur = this.joueurs.find(
-      (entry) =>
-        entry.personnageMain?.nom === nomPerso || entry.rerolls?.some((personnage) => personnage.nom === nomPerso)
-    );
-
-    return joueur?.statutParticipation ?? null;
+    return this.findJoueurByPersonnage(nomPerso)?.statutParticipation ?? null;
   }
 
   getTentativeReasonForCharacter(nomPerso: string): string | null {
-    const joueur = this.joueurs.find(
-      (entry) =>
-        entry.personnageMain?.nom === nomPerso || entry.rerolls?.some((personnage) => personnage.nom === nomPerso)
-    );
+    const joueur = this.findJoueurByPersonnage(nomPerso);
 
     if (!joueur || joueur.statutParticipation !== 'TENTATIVE') {
       return null;
@@ -988,5 +981,72 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
 
   private getDisplayCharactersForJoueur(joueur: JoueurDTO): PersonnageDTO[] {
     return [joueur.personnageMain, ...(joueur.rerolls || [])].filter(Boolean) as PersonnageDTO[];
+  }
+
+  private getCanonicalRaidParticipants(): JoueurDTO[] {
+    const canonicalByPlayer = new Map<string, JoueurDTO>();
+
+    for (const joueur of this.joueurs ?? []) {
+      const key = this.buildJoueurKey(joueur);
+      if (!key) {
+        continue;
+      }
+
+      const current = canonicalByPlayer.get(key);
+      if (!current || this.compareSignupPriority(joueur, current) < 0) {
+        canonicalByPlayer.set(key, joueur);
+      }
+    }
+
+    return Array.from(canonicalByPlayer.values());
+  }
+
+  private buildJoueurKey(joueur: JoueurDTO | null | undefined): string | null {
+    if (!joueur) {
+      return null;
+    }
+    if (joueur.id != null) {
+      return `id:${joueur.id}`;
+    }
+
+    const serverPseudo = this.normalizeValue(joueur.serverPseudo);
+    if (serverPseudo) {
+      return `server:${serverPseudo}`;
+    }
+
+    const pseudo = this.normalizeValue(joueur.pseudo);
+    if (pseudo) {
+      return `pseudo:${pseudo}`;
+    }
+
+    return null;
+  }
+
+  private compareSignupPriority(left: JoueurDTO, right: JoueurDTO): number {
+    const leftScore = this.signupPriority(left);
+    const rightScore = this.signupPriority(right);
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+
+    const leftManual = left.commentaireInscription === this.manualSignupComment ? 1 : 0;
+    const rightManual = right.commentaireInscription === this.manualSignupComment ? 1 : 0;
+    return rightManual - leftManual;
+  }
+
+  private signupPriority(joueur: JoueurDTO): number {
+    switch (joueur.statutParticipation) {
+      case 'ABSENCE':
+        return 5;
+      case 'BENCH':
+        return 4;
+      case 'LATE':
+        return 3;
+      case 'TENTATIVE':
+        return 2;
+      case 'TITULAIRE':
+      default:
+        return 1;
+    }
   }
 }
