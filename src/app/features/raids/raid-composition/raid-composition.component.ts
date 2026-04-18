@@ -1006,6 +1006,11 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
       return null;
     }
 
+    const discordId = this.normalizeValue(joueur.discordId ?? undefined);
+    if (discordId) {
+      return `discord:${discordId}`;
+    }
+
     const serverPseudo = this.normalizeValue(joueur.serverPseudo);
     if (serverPseudo) {
       return `server:${serverPseudo}`;

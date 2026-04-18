@@ -18,6 +18,7 @@ export interface RaidDTO {
 
 export interface JoueurDTO {
   id: number;
+  discordId?: string | null;
   pseudoIhm: string;
   pseudo: string;
   serverPseudo: string;
