@@ -24,6 +24,8 @@ import {
 } from '../../../core/models/raid.model';
 import { RaidCompositionComponent } from '../raid-composition/raid-composition.component';
 import {DragDropModule} from '@angular/cdk/drag-drop';
+import { of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-raids-page',
@@ -143,13 +145,27 @@ export class RaidsPageComponent implements OnInit {
       nom: this.createRaidDraft.nom.trim(),
       date: this.createRaidDraft.date,
       channelId: this.createRaidDraft.channelId.trim()
-    }).subscribe({
-      next: (createdRaid) => {
+    }).pipe(
+      switchMap((createdRaid) =>
+        this.raidService.publishCustomSignupFlowToRaidChannel(createdRaid.id, createdRaid.channelId).pipe(
+          switchMap((publishMessage) => of({ createdRaid, publishMessage, publishFailed: false })),
+          catchError((publishError) => of({
+            createdRaid,
+            publishMessage: publishError?.error?.message
+              || (typeof publishError?.error === 'string' ? publishError.error : "Le raid a ete cree, mais la publication de l'inscription a echoue."),
+            publishFailed: true
+          }))
+        )
+      )
+    ).subscribe({
+      next: ({ createdRaid, publishMessage, publishFailed }) => {
         const raidDate = createdRaid.heure.slice(0, 10);
         this.selectedWeekView = this.resolveWeekViewForDate(raidDate);
         this.isCreatingRaid = false;
         this.isCreateRaidPanelOpen = false;
-        this.createRaidMessage = `Raid "${createdRaid.nom}" cree.`;
+        this.createRaidMessage = publishFailed
+          ? `Raid "${createdRaid.nom}" cree. ${publishMessage}`
+          : `Raid "${createdRaid.nom}" cree et inscription publiee. ${publishMessage}`;
         this.loadRaids(raidDate, createdRaid.id);
       },
       error: (error) => {
