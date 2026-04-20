@@ -432,7 +432,7 @@
           <span>Raid cible</span>
           <select class="admin-input" [(ngModel)]="selectedOperationalRaidId" (ngModelChange)="onOperationalRaidChange()">
             <option [ngValue]="null">Selectionne un raid</option>
-            <option *ngFor="let option of raidOptions" [ngValue]="option.id">{{ option.label }}</option>
+            <option *ngFor="let option of operationalRaidOptions" [ngValue]="option.id">{{ option.label }}</option>
           </select>
         </label>
 

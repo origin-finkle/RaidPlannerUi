@@ -220,6 +220,34 @@ export class AdminPageComponent implements OnInit {
     );
   }
 
+  get operationalRaidOptions(): Array<{ id: number; label: string }> {
+    return this.groupedRaids.flatMap((day) => {
+      const bestRaidByKey = new Map<string, RaidDTO>();
+
+      for (const raid of (day.raids ?? []).filter((entry) => this.isRaidConsistentWithDayDate(day.date, entry))) {
+        const key = this.buildRaidOptionDedupKey(raid);
+        const current = bestRaidByKey.get(key);
+        if (!current || this.compareRaidOptionPriority(raid, current) < 0) {
+          bestRaidByKey.set(key, raid);
+        }
+      }
+
+      return Array.from(bestRaidByKey.values())
+        .sort((left, right) => {
+          const leftTime = new Date(left.heure).getTime();
+          const rightTime = new Date(right.heure).getTime();
+          if (leftTime !== rightTime) {
+            return leftTime - rightTime;
+          }
+          return left.nom.localeCompare(right.nom, 'fr-FR');
+        })
+        .map((raid) => ({
+          id: raid.id,
+          label: `${this.formatDateLabel(day.date)} · ${raid.nom}`
+        }));
+    });
+  }
+
   get schedulerChannelOptions(): Array<{ id: string; label: string }> {
     if (!this.raidSchedulerStatus) {
       return [];
@@ -1131,6 +1159,11 @@ export class AdminPageComponent implements OnInit {
     }).format(date);
   }
 
+  private parseDayDate(dateString: string): Date {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   formatDateTimeLabel(value: string | null | undefined): string {
     if (!value) {
       return 'Inconnue';
@@ -1238,11 +1271,11 @@ export class AdminPageComponent implements OnInit {
     this.raidService.getGroupedRaids().subscribe((groupedRaids) => {
       this.groupedRaids = groupedRaids;
 
-      const availableIds = new Set(this.raidOptions.map((option) => option.id));
+      const availableIds = new Set(this.operationalRaidOptions.map((option) => option.id));
       if (previousSelection && availableIds.has(previousSelection)) {
         this.selectedOperationalRaidId = previousSelection;
       } else {
-        this.selectedOperationalRaidId = this.raidOptions[0]?.id ?? null;
+        this.selectedOperationalRaidId = this.operationalRaidOptions[0]?.id ?? null;
       }
     });
   }
@@ -1437,6 +1470,81 @@ export class AdminPageComponent implements OnInit {
 
     const match = value.match(/(\d{2}:\d{2})/);
     return match?.[1] || value;
+  }
+
+  private buildRaidOptionDedupKey(raid: RaidDTO): string {
+    return `${this.normalizeValue(raid.nom)}|${raid.heure}`;
+  }
+
+  private compareRaidOptionPriority(left: RaidDTO, right: RaidDTO): number {
+    const leftScore = this.raidOptionPriority(left);
+    const rightScore = this.raidOptionPriority(right);
+    if (leftScore !== rightScore) {
+      return rightScore - leftScore;
+    }
+
+    const leftId = left.id ?? Number.MAX_SAFE_INTEGER;
+    const rightId = right.id ?? Number.MAX_SAFE_INTEGER;
+    return leftId - rightId;
+  }
+
+  private raidOptionPriority(raid: RaidDTO): number {
+    let score = 0;
+    const signupCount = raid.joueurDTOList?.length ?? 0;
+    score += Math.min(signupCount, 25) * 4;
+    if (raid.lastPublishedAt) {
+      score += 4;
+    }
+    if (raid.compositionStatus === 'PUBLISHED') {
+      score += 3;
+    }
+    if (raid.compositionStatus === 'READY') {
+      score += 2;
+    }
+    if (raid.compositionLocked) {
+      score += 1;
+    }
+    return score;
+  }
+
+  private isRaidConsistentWithDayDate(dateString: string, raid: RaidDTO): boolean {
+    const namedDayIndex = this.getNamedRaidDayIndex(raid.nom);
+    if (namedDayIndex == null) {
+      return true;
+    }
+
+    return this.parseDayDate(dateString).getDay() === namedDayIndex;
+  }
+
+  private getNamedRaidDayIndex(raidName: string | null | undefined): number | null {
+    const normalized = this.normalizeValue(raidName ?? undefined);
+    if (!normalized.startsWith('raiddu') && !normalized.startsWith('raidde') && !normalized.startsWith('raidd')) {
+      return null;
+    }
+
+    if (normalized.includes('mercredi')) {
+      return 3;
+    }
+    if (normalized.includes('jeudi')) {
+      return 4;
+    }
+    if (normalized.includes('vendredi')) {
+      return 5;
+    }
+    if (normalized.includes('samedi')) {
+      return 6;
+    }
+    if (normalized.includes('dimanche')) {
+      return 0;
+    }
+    if (normalized.includes('lundi')) {
+      return 1;
+    }
+    if (normalized.includes('mardi')) {
+      return 2;
+    }
+
+    return null;
   }
 
   private getEmojiTag(classe: string, specialisation: string): string {
