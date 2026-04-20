@@ -22,7 +22,8 @@ import {
   RaidPublicationHistoryDTO,
   RaidSchedulerStatusDTO,
   RaidTemplateDTO,
-  UpdateRaidCompositionStateRequestDTO
+  UpdateRaidCompositionStateRequestDTO,
+  UpdateRaidRequestDTO
 } from '../models/raid.model';
 
 @Injectable({ providedIn: 'root' })
@@ -51,6 +52,10 @@ export class RaidService {
 
   deleteRaid(raidId: number): Observable<void> {
     return this.http.delete<void>(`/api/raids/${raidId}`);
+  }
+
+  updateRaid(raidId: number, dto: UpdateRaidRequestDTO): Observable<RaidDTO> {
+    return this.http.patch<RaidDTO>(`/api/raids/${raidId}`, dto);
   }
 
   getRaidDiagnostic(raidId: number): Observable<RaidDiagnosticDTO> {

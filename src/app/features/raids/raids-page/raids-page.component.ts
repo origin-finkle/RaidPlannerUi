@@ -74,6 +74,7 @@ export class RaidsPageComponent implements OnInit {
   isCreateRaidPanelOpen = false;
   isCreatingRaid = false;
   isDeletingRaid = false;
+  isRenamingRaid = false;
   autoComposeConfig: AutoComposeWeekRequestDTO = {
     maxRaids: 2,
     targetTanks: 2,
@@ -84,6 +85,7 @@ export class RaidsPageComponent implements OnInit {
     huntersFillMissingBuffs: true
   };
   createRaidDraft: CreateRaidRequestDTO = this.buildCreateRaidDraft();
+  renameRaidDraft = '';
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -111,6 +113,13 @@ export class RaidsPageComponent implements OnInit {
       && !!this.createRaidDraft.nom?.trim()
       && !!this.createRaidDraft.date?.trim()
       && !!this.createRaidDraft.channelId?.trim();
+  }
+
+  get canSubmitRenameRaid(): boolean {
+    return !!this.selectedRaid
+      && !this.isRenamingRaid
+      && !!this.renameRaidDraft.trim()
+      && this.renameRaidDraft.trim() !== this.selectedRaid.nom;
   }
 
   get availableDiscordChannelOptions(): Array<{ id: string; label: string }> {
@@ -205,6 +214,34 @@ export class RaidsPageComponent implements OnInit {
     });
   }
 
+  renameSelectedRaid(): void {
+    if (!this.selectedRaid || !this.canSubmitRenameRaid) {
+      return;
+    }
+
+    const raidId = this.selectedRaid.id;
+    const currentDayDate = this.selectedDay?.date ?? null;
+    const nextName = this.renameRaidDraft.trim();
+
+    this.isRenamingRaid = true;
+    this.autoComposeMessage = null;
+    this.autoComposeWarnings = [];
+
+    this.raidService.updateRaid(raidId, { nom: nextName }).subscribe({
+      next: () => {
+        this.isRenamingRaid = false;
+        this.autoComposeMessage = `Raid renomme en "${nextName}".`;
+        this.loadRaids(currentDayDate, raidId);
+      },
+      error: (error) => {
+        this.isRenamingRaid = false;
+        this.autoComposeMessage = error?.error?.message
+          || (typeof error?.error === 'string' ? error.error : "Impossible de renommer ce raid.");
+        this.autoComposeWarnings = [];
+      }
+    });
+  }
+
   selectDay(day: RaidDayResponse): void {
     if (this.selectedDay && this.selectedRaid) {
       this.saveCurrentComposition(this.selectedRaid);
@@ -212,6 +249,7 @@ export class RaidsPageComponent implements OnInit {
 
     this.selectedDay = day;
     this.selectedRaid = day.raids[0] ?? null;
+    this.syncRenameRaidDraft();
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
     this.autoSelectTemplateForDay();
@@ -223,6 +261,7 @@ export class RaidsPageComponent implements OnInit {
       this.saveCurrentComposition(this.selectedRaid);
     }
     this.selectedRaid = raid;
+    this.syncRenameRaidDraft();
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
     this.autoSelectTemplateForDay();
@@ -980,6 +1019,7 @@ export class RaidsPageComponent implements OnInit {
     if (this.groupedRaids.length === 0) {
       this.selectedDay = null;
       this.selectedRaid = null;
+      this.syncRenameRaidDraft();
       return;
     }
 
@@ -988,6 +1028,7 @@ export class RaidsPageComponent implements OnInit {
       if (containingDay) {
         this.selectedDay = containingDay;
         this.selectedRaid = containingDay.raids.find((raid) => raid.id === preferredRaidId) ?? containingDay.raids[0] ?? null;
+        this.syncRenameRaidDraft();
         return;
       }
     }
@@ -1002,6 +1043,11 @@ export class RaidsPageComponent implements OnInit {
       ? selectedDay.raids.find((raid) => raid.id === preferredRaidId)
       : null;
     this.selectedRaid = preferredRaid ?? selectedDay.raids[0] ?? null;
+    this.syncRenameRaidDraft();
+  }
+
+  private syncRenameRaidDraft(): void {
+    this.renameRaidDraft = this.selectedRaid?.nom ?? '';
   }
 
   private loadPublicationComparison(): void {

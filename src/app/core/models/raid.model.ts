@@ -54,6 +54,10 @@ export interface CreateRaidRequestDTO {
   channelId: string;
 }
 
+export interface UpdateRaidRequestDTO {
+  nom?: string;
+}
+
 export interface AutoComposeWeekResultDTO {
   selectedRaidIds: number[];
   updatedRaidIds: number[];

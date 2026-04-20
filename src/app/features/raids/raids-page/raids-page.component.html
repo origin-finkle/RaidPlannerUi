@@ -203,7 +203,21 @@
           <span *ngIf="selectedRaid.compositionLocked"> - verrouillee</span>
           <span *ngIf="selectedRaid.lastPublishedAt"> - derniere publication {{ formatRaidDate(selectedRaid.lastPublishedAt) }}</span>
         </p>
+        <div class="auto-compose-config__grid">
+          <label class="config-field" style="min-width: 18rem;">
+            <span>Nom du raid</span>
+            <input
+              type="text"
+              [(ngModel)]="renameRaidDraft"
+              [disabled]="isRenamingRaid"
+              placeholder="Renommer ce raid"
+            >
+          </label>
+        </div>
         <div class="panel__actions">
+          <button type="button" class="action-button action-button--secondary" [disabled]="!canSubmitRenameRaid" (click)="renameSelectedRaid()">
+            {{ isRenamingRaid ? 'Enregistrement...' : 'Renommer le raid' }}
+          </button>
           <button type="button" class="action-button action-button--secondary" [disabled]="isUpdatingCompositionState" (click)="markSelectedRaidDraft()">
             Passer en brouillon
           </button>
