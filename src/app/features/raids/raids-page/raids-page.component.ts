@@ -873,7 +873,7 @@ export class RaidsPageComponent implements OnInit {
   private deduplicateDayRaids(day: RaidDayResponse): RaidDayResponse {
     const bestRaidByKey = new Map<string, RaidDTO>();
 
-    for (const raid of day.raids ?? []) {
+    for (const raid of (day.raids ?? []).filter((entry) => this.isDisplayedRaidConsistentWithDate(day.date, entry))) {
       const key = this.buildRaidDedupKey(raid);
       const current = bestRaidByKey.get(key);
       if (!current || this.compareRaidDisplayPriority(raid, current) < 0) {
@@ -912,6 +912,8 @@ export class RaidsPageComponent implements OnInit {
 
   private raidDisplayPriority(raid: RaidDTO): number {
     let score = 0;
+    const signupCount = raid.joueurDTOList?.length ?? 0;
+    score += Math.min(signupCount, 25) * 4;
     if (raid.lastPublishedAt) {
       score += 4;
     }
@@ -924,6 +926,46 @@ export class RaidsPageComponent implements OnInit {
       score += 1;
     }
     return score;
+  }
+
+  private isDisplayedRaidConsistentWithDate(dateString: string, raid: RaidDTO): boolean {
+    const namedDayIndex = this.getNamedRaidDayIndex(raid.nom);
+    if (namedDayIndex == null) {
+      return true;
+    }
+
+    return this.parseDayDate(dateString).getDay() === namedDayIndex;
+  }
+
+  private getNamedRaidDayIndex(raidName: string | null | undefined): number | null {
+    const normalized = this.normalizeValue(raidName);
+    if (!normalized.startsWith('raiddu') && !normalized.startsWith('raidde') && !normalized.startsWith('raidd')) {
+      return null;
+    }
+
+    if (normalized.includes('mercredi')) {
+      return 3;
+    }
+    if (normalized.includes('jeudi')) {
+      return 4;
+    }
+    if (normalized.includes('vendredi')) {
+      return 5;
+    }
+    if (normalized.includes('samedi')) {
+      return 6;
+    }
+    if (normalized.includes('dimanche')) {
+      return 0;
+    }
+    if (normalized.includes('lundi')) {
+      return 1;
+    }
+    if (normalized.includes('mardi')) {
+      return 2;
+    }
+
+    return null;
   }
 
   private getResetWeekStart(date: Date): Date {
