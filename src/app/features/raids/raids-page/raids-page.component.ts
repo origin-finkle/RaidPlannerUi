@@ -926,6 +926,38 @@ export class RaidsPageComponent implements OnInit {
     }
   }
 
+  referenceClassColor(classe: string | undefined): string {
+    const colors: Record<string, string> = {
+      guerrier: '#C79C6E',
+      mage: '#69CCF0',
+      voleur: '#FFF569',
+      paladin: '#F58CBA',
+      pretre: '#FFFFFF',
+      chasseur: '#ABD473',
+      demoniste: '#9482C9',
+      chaman: '#0070DE',
+      druide: '#FF7D0A',
+      dk: '#C41F3B',
+      moine: '#00FF96'
+    };
+
+    return colors[this.normalizeClassName(classe)] || '#555';
+  }
+
+  referenceClassTextColor(classe: string | undefined): string {
+    const lightBgClasses = new Set(['pretre', 'voleur', 'chasseur', 'moine']);
+    return lightBgClasses.has(this.normalizeClassName(classe)) ? '#111827' : '#f8fafc';
+  }
+
+  referenceSpecIcon(spec: string | undefined, classe: string | undefined): string | null {
+    if (!spec || !classe) {
+      return null;
+    }
+
+    const file = `${this.getAssetClassName(classe)}_${this.getAssetSpecName(spec)}.webp`;
+    return `/assets/spec-icons/${file}`;
+  }
+
   compositionStatusLabel(status: string | null | undefined): string {
     switch (status) {
       case 'READY':
@@ -1343,6 +1375,79 @@ export class RaidsPageComponent implements OnInit {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]/g, '');
+  }
+
+  private normalizeClassName(value?: string | null): string {
+    const normalized = this.normalizeValue(value);
+    const aliases: Record<string, string> = {
+      deathknight: 'dk',
+      chevalierdelamort: 'dk',
+      hunter: 'chasseur',
+      priest: 'pretre',
+      warlock: 'demoniste',
+      warrior: 'guerrier',
+      shaman: 'chaman',
+      rogue: 'voleur',
+      druid: 'druide',
+      monk: 'moine'
+    };
+
+    return aliases[normalized] || normalized;
+  }
+
+  private normalizeSpecName(value?: string | null): string {
+    const normalized = this.normalizeValue(value);
+    const specAliases: Record<string, string> = {
+      arms: 'arme',
+      assassination: 'assassinat',
+      beastmastery: 'bm',
+      beastmaster: 'bm',
+      blood: 'sang',
+      brewmaster: 'maitrebrasseur',
+      destruction: 'destruction',
+      discipline: 'discipline',
+      elemental: 'elem',
+      enhancement: 'amelioration',
+      feral: 'feral',
+      fire: 'feu',
+      frost: 'givre',
+      fury: 'fury',
+      guardian: 'gardien',
+      havoc: 'havoc',
+      holy: 'sacre',
+      marksmanship: 'precision',
+      mistweaver: 'tissebrume',
+      protection: 'protection',
+      restoration: 'restauration',
+      retribution: 'retribution',
+      shadow: 'ombre',
+      survival: 'survie',
+      unholy: 'impie',
+      vengeance: 'vengeance',
+      windwalker: 'marchevent'
+    };
+
+    return specAliases[normalized] || normalized;
+  }
+
+  private getAssetClassName(value?: string | null): string {
+    return this.normalizeClassName(value);
+  }
+
+  private getAssetSpecName(value?: string | null): string {
+    const normalized = this.normalizeSpecName(value);
+    const assetSpecNames: Record<string, string> = {
+      amelioration: 'amelioration',
+      elem: 'elem',
+      maitrebrasseur: 'maitre-brasseur',
+      marchevent: 'marche-vent',
+      precision: 'precision',
+      retribution: 'retribution',
+      sacre: 'sacre',
+      tissebrume: 'tisse-brume'
+    };
+
+    return (assetSpecNames[normalized] || normalized).replace(/\s+/g, '_');
   }
 
   private buildAutoComposeMessage(result: AutoComposeWeekResultDTO): string {

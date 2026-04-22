@@ -619,6 +619,56 @@
   margin-top: 0.35rem;
 }
 
+.reference-raid-shell {
+  gap: 0.85rem;
+}
+
+.reference-raid-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 1rem 1.05rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.reference-raid-summary p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.reference-group-grid {
+  grid-template-columns: 1fr;
+}
+
+.reference-group-header {
+  padding: 0;
+  margin-bottom: 0.8rem;
+}
+
+.reference-character-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.reference-character-card {
+  min-width: 0;
+}
+
+.reference-character-card strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.reference-character-card .panel__meta {
+  color: inherit;
+  opacity: 0.82;
+}
+
 .config-toggle {
   display: inline-flex;
   align-items: center;

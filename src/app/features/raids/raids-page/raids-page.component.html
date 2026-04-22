@@ -625,25 +625,28 @@
           </p>
         </div>
 
-        <div class="preview-shell" *ngIf="selectedReferenceRaid as referenceRaid">
-          <div class="preview-card">
-            <strong>{{ referenceRaid.nom }}</strong>
+        <div class="preview-shell reference-raid-shell" *ngIf="selectedReferenceRaid as referenceRaid">
+          <div class="reference-raid-summary">
+              <strong>{{ referenceRaid.nom }}</strong>
             <p>{{ selectedReferenceRaidDayLabel }} · {{ formatRaidDate(referenceRaid.heure) }}</p>
             <p>{{ referenceRaidAssignedCount(referenceRaid) }}/10 places assignees · {{ referenceRaidSignupCount(referenceRaid) }} inscrits</p>
           </div>
 
-          <div class="preview-grid">
+          <div class="preview-grid reference-group-grid">
             <div class="preview-card">
-              <div class="fold-card__summary" style="padding: 0; margin-bottom: 0.8rem;">
+              <div class="fold-card__summary reference-group-header" style="padding: 0; margin-bottom: 0.8rem;">
                 <strong>Groupe 1</strong>
                 <span>{{ (referenceRaid.group1?.length ?? 0) }}/5</span>
               </div>
-              <div style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group1?.length; else emptyReferenceGroup1">
+              <div class="reference-character-list" style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group1?.length; else emptyReferenceGroup1">
                 <article
                   *ngFor="let character of referenceRaid.group1 || []"
+                  class="reference-character-card"
                   style="display: grid; gap: 0.18rem; padding: 0.7rem 0.8rem; border-radius: 0.9rem; border: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.42);"
                   [style.borderColor]="referenceRoleBorderColor(character.role)"
                   [style.background]="referenceRoleBackground(character.role)"
+                  [style.boxShadow]="'inset 0 0 0 999px ' + referenceClassColor(character.classe)"
+                  [style.color]="referenceClassTextColor(character.classe)"
                 >
                   <strong>{{ character.nom }}</strong>
                   <span class="panel__meta">{{ character.classe }} · {{ character.specialisation }}</span>
@@ -655,16 +658,19 @@
             </div>
 
             <div class="preview-card">
-              <div class="fold-card__summary" style="padding: 0; margin-bottom: 0.8rem;">
+              <div class="fold-card__summary reference-group-header" style="padding: 0; margin-bottom: 0.8rem;">
                 <strong>Groupe 2</strong>
                 <span>{{ (referenceRaid.group2?.length ?? 0) }}/5</span>
               </div>
-              <div style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group2?.length; else emptyReferenceGroup2">
+              <div class="reference-character-list" style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group2?.length; else emptyReferenceGroup2">
                 <article
                   *ngFor="let character of referenceRaid.group2 || []"
+                  class="reference-character-card"
                   style="display: grid; gap: 0.18rem; padding: 0.7rem 0.8rem; border-radius: 0.9rem; border: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.42);"
                   [style.borderColor]="referenceRoleBorderColor(character.role)"
                   [style.background]="referenceRoleBackground(character.role)"
+                  [style.boxShadow]="'inset 0 0 0 999px ' + referenceClassColor(character.classe)"
+                  [style.color]="referenceClassTextColor(character.classe)"
                 >
                   <strong>{{ character.nom }}</strong>
                   <span class="panel__meta">{{ character.classe }} · {{ character.specialisation }}</span>
