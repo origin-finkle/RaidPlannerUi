@@ -169,12 +169,14 @@
 }
 
 .raid-workbench__aside {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
   min-width: 0;
 }
 
 .pilot-panel {
-  position: sticky;
-  top: 1rem;
+  position: relative;
 }
 
 .pilot-panel.is-collapsed .pilot-stack {
