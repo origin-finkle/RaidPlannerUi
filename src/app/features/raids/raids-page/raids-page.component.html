@@ -602,6 +602,81 @@
           </div>
         </div>
       </div>
+
+      <div class="panel panel--subtle" *ngIf="selectedRaid">
+        <div class="panel__header">
+          <div>
+            <span class="panel__eyebrow">Raid de reference</span>
+            <h2>Comparer une autre compo</h2>
+          </div>
+        </div>
+
+        <label class="config-field">
+          <span>Raid affiche a cote</span>
+          <select [(ngModel)]="selectedReferenceRaidId">
+            <option [ngValue]="null">Aucun raid de reference</option>
+            <option *ngFor="let option of referenceRaidOptions" [ngValue]="option.id">{{ option.label }}</option>
+          </select>
+        </label>
+
+        <div class="auto-compose-feedback" *ngIf="!selectedReferenceRaid">
+          <p class="auto-compose-feedback__message">
+          Choisis un autre raid de la semaine pour garder sa compo sous les yeux pendant que tu travailles.
+          </p>
+        </div>
+
+        <div class="preview-shell" *ngIf="selectedReferenceRaid as referenceRaid">
+          <div class="preview-card">
+            <strong>{{ referenceRaid.nom }}</strong>
+            <p>{{ selectedReferenceRaidDayLabel }} · {{ formatRaidDate(referenceRaid.heure) }}</p>
+            <p>{{ referenceRaidAssignedCount(referenceRaid) }}/10 places assignees · {{ referenceRaidSignupCount(referenceRaid) }} inscrits</p>
+          </div>
+
+          <div class="preview-grid">
+            <div class="preview-card">
+              <div class="fold-card__summary" style="padding: 0; margin-bottom: 0.8rem;">
+                <strong>Groupe 1</strong>
+                <span>{{ (referenceRaid.group1?.length ?? 0) }}/5</span>
+              </div>
+              <div style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group1?.length; else emptyReferenceGroup1">
+                <article
+                  *ngFor="let character of referenceRaid.group1 || []"
+                  style="display: grid; gap: 0.18rem; padding: 0.7rem 0.8rem; border-radius: 0.9rem; border: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.42);"
+                  [style.borderColor]="referenceRoleBorderColor(character.role)"
+                  [style.background]="referenceRoleBackground(character.role)"
+                >
+                  <strong>{{ character.nom }}</strong>
+                  <span class="panel__meta">{{ character.classe }} · {{ character.specialisation }}</span>
+                </article>
+              </div>
+              <ng-template #emptyReferenceGroup1>
+                <div class="panel__meta">Aucun joueur assigne.</div>
+              </ng-template>
+            </div>
+
+            <div class="preview-card">
+              <div class="fold-card__summary" style="padding: 0; margin-bottom: 0.8rem;">
+                <strong>Groupe 2</strong>
+                <span>{{ (referenceRaid.group2?.length ?? 0) }}/5</span>
+              </div>
+              <div style="display: grid; gap: 0.65rem;" *ngIf="referenceRaid.group2?.length; else emptyReferenceGroup2">
+                <article
+                  *ngFor="let character of referenceRaid.group2 || []"
+                  style="display: grid; gap: 0.18rem; padding: 0.7rem 0.8rem; border-radius: 0.9rem; border: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.42);"
+                  [style.borderColor]="referenceRoleBorderColor(character.role)"
+                  [style.background]="referenceRoleBackground(character.role)"
+                >
+                  <strong>{{ character.nom }}</strong>
+                  <span class="panel__meta">{{ character.classe }} · {{ character.specialisation }}</span>
+                </article>
+              </div>
+              <ng-template #emptyReferenceGroup2>
+                <div class="panel__meta">Aucun joueur assigne.</div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
     </aside>
   </div>
 </section>

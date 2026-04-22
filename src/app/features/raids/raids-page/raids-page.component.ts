@@ -70,6 +70,7 @@ export class RaidsPageComponent implements OnInit {
   templates: RaidTemplateDTO[] = [];
   discordChannelOptions: DiscordChannelOptionDTO[] = [];
   selectedTemplateId: number | null = null;
+  selectedReferenceRaidId: number | null = null;
   selectedWeekView: 'current' | 'next' = 'current';
   isCreateRaidPanelOpen = false;
   isCreatingRaid = false;
@@ -127,6 +128,41 @@ export class RaidsPageComponent implements OnInit {
       id: channel.id,
       label: channel.label
     }));
+  }
+
+  get referenceRaidOptions(): Array<{ id: number; label: string }> {
+    return this.groupedRaids
+      .flatMap((day) =>
+        day.raids.map((raid) => ({
+          id: raid.id,
+          label: `${this.formatDayChipNumber(day.date)} · ${raid.nom}`
+        }))
+      )
+      .filter((option) => option.id !== this.selectedRaid?.id);
+  }
+
+  get selectedReferenceRaid(): RaidDTO | null {
+    if (!this.selectedReferenceRaidId) {
+      return null;
+    }
+
+    for (const day of this.groupedRaids) {
+      const raid = day.raids.find((entry) => entry.id === this.selectedReferenceRaidId);
+      if (raid) {
+        return raid;
+      }
+    }
+
+    return null;
+  }
+
+  get selectedReferenceRaidDayLabel(): string | null {
+    if (!this.selectedReferenceRaidId) {
+      return null;
+    }
+
+    const containingDay = this.groupedRaids.find((day) => day.raids.some((raid) => raid.id === this.selectedReferenceRaidId));
+    return containingDay ? this.formatDateLabel(containingDay.date) : null;
   }
 
   openCreateRaidPanel(): void {
@@ -250,6 +286,7 @@ export class RaidsPageComponent implements OnInit {
     this.selectedDay = day;
     this.selectedRaid = day.raids[0] ?? null;
     this.syncRenameRaidDraft();
+    this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
     this.autoSelectTemplateForDay();
@@ -262,6 +299,7 @@ export class RaidsPageComponent implements OnInit {
     }
     this.selectedRaid = raid;
     this.syncRenameRaidDraft();
+    this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
     this.autoSelectTemplateForDay();
@@ -854,6 +892,40 @@ export class RaidsPageComponent implements OnInit {
     });
   }
 
+  referenceRaidAssignedCount(raid: RaidDTO | null): number {
+    if (!raid) {
+      return 0;
+    }
+
+    return (raid.group1?.length ?? 0) + (raid.group2?.length ?? 0);
+  }
+
+  referenceRaidSignupCount(raid: RaidDTO | null): number {
+    return raid?.joueurDTOList?.length ?? 0;
+  }
+
+  referenceRoleBorderColor(role: string | null | undefined): string {
+    switch (this.normalizeValue(role)) {
+      case 'tank':
+        return 'rgba(245, 158, 11, 0.2)';
+      case 'heal':
+        return 'rgba(34, 197, 94, 0.2)';
+      default:
+        return 'rgba(96, 165, 250, 0.18)';
+    }
+  }
+
+  referenceRoleBackground(role: string | null | undefined): string {
+    switch (this.normalizeValue(role)) {
+      case 'tank':
+        return 'linear-gradient(135deg, rgba(120, 53, 15, 0.18), rgba(15, 23, 42, 0.42))';
+      case 'heal':
+        return 'linear-gradient(135deg, rgba(20, 83, 45, 0.18), rgba(15, 23, 42, 0.42))';
+      default:
+        return 'linear-gradient(135deg, rgba(30, 64, 175, 0.16), rgba(15, 23, 42, 0.42))';
+    }
+  }
+
   compositionStatusLabel(status: string | null | undefined): string {
     switch (status) {
       case 'READY':
@@ -1002,6 +1074,7 @@ export class RaidsPageComponent implements OnInit {
       next: (res) => {
         this.allGroupedRaids = this.sortGroupedRaidsByResetWeek(res);
         this.restoreSelection(preferredDayDate, preferredRaidId);
+        this.syncReferenceRaidSelection();
         this.isAutoComposing = false;
         this.isPreviewingAutoCompose = false;
         this.loadSelectedRaidInsights();
@@ -1020,6 +1093,7 @@ export class RaidsPageComponent implements OnInit {
       this.selectedDay = null;
       this.selectedRaid = null;
       this.syncRenameRaidDraft();
+      this.selectedReferenceRaidId = null;
       return;
     }
 
@@ -1048,6 +1122,15 @@ export class RaidsPageComponent implements OnInit {
 
   private syncRenameRaidDraft(): void {
     this.renameRaidDraft = this.selectedRaid?.nom ?? '';
+  }
+
+  private syncReferenceRaidSelection(): void {
+    const availableIds = new Set(this.referenceRaidOptions.map((option) => option.id));
+    if (this.selectedReferenceRaidId && availableIds.has(this.selectedReferenceRaidId)) {
+      return;
+    }
+
+    this.selectedReferenceRaidId = this.referenceRaidOptions[0]?.id ?? null;
   }
 
   private loadPublicationComparison(): void {
