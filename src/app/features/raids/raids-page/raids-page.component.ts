@@ -888,6 +888,14 @@ export class RaidsPageComponent implements OnInit {
     return this.selectedRaid?.id === raid.id;
   }
 
+  trackWeekBoardDay(_: number, day: { date: string }): string {
+    return day.date;
+  }
+
+  trackRaidById(_: number, raid: RaidDTO): number {
+    return raid.id;
+  }
+
   formatRaidDate(heure: string): string {
     const date = new Date(heure);
     return date.toLocaleString('fr-FR', {

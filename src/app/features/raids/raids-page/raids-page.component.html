@@ -134,7 +134,7 @@
 
       <div class="week-board">
         <article
-          *ngFor="let day of weekBoardDays"
+          *ngFor="let day of weekBoardDays; trackBy: trackWeekBoardDay"
           class="week-column"
           [class.is-selected]="day.isSelected"
         >
@@ -146,7 +146,7 @@
 
           <div class="week-column__body" *ngIf="day.raids.length; else emptyWeekDay">
             <button
-              *ngFor="let raid of day.raids"
+              *ngFor="let raid of day.raids; trackBy: trackRaidById"
               type="button"
               class="week-raid-card"
               [class.is-active]="isRaidSelected(raid)"
@@ -196,7 +196,7 @@
 
       <div class="raid-chip-row">
         <button
-          *ngFor="let raid of selectedDay.raids"
+          *ngFor="let raid of selectedDay.raids; trackBy: trackRaidById"
           type="button"
           (click)="onRaidChange(raid)"
           class="raid-chip"
