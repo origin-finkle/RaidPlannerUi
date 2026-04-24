@@ -76,7 +76,7 @@ export class RaidsPageComponent implements OnInit {
   isCreatingRaid = false;
   isDeletingRaid = false;
   isRenamingRaid = false;
-  isUpdatingRaidOptions = false;
+  ignoreWeeklyConflictsForView = false;
   autoComposeConfig: AutoComposeWeekRequestDTO = {
     maxRaids: 2,
     targetTanks: 2,
@@ -191,7 +191,7 @@ export class RaidsPageComponent implements OnInit {
       nom: this.createRaidDraft.nom.trim(),
       date: this.createRaidDraft.date,
       channelId: this.createRaidDraft.channelId.trim(),
-      ignoreWeeklyConflicts: !!this.createRaidDraft.ignoreWeeklyConflicts
+      ignoreWeeklyConflicts: false
     }).pipe(
       switchMap((createdRaid) =>
         this.raidService.publishCustomSignupFlowToRaidChannel(createdRaid.id, createdRaid.channelId).pipe(
@@ -280,49 +280,10 @@ export class RaidsPageComponent implements OnInit {
     });
   }
 
-  updateSelectedRaidIgnoreWeeklyConflicts(ignoreWeeklyConflicts: boolean): void {
-    if (!this.selectedRaid || this.isUpdatingRaidOptions) {
-      return;
-    }
-
-    const currentRaidId = this.selectedRaid.id;
-    const currentDayDate = this.selectedDay?.date ?? null;
-    const desiredValue = !!ignoreWeeklyConflicts;
-
-    if (this.selectedRaid.ignoreWeeklyConflicts === desiredValue) {
-      return;
-    }
-
-    this.isUpdatingRaidOptions = true;
-    this.autoComposeMessage = null;
-    this.autoComposeWarnings = [];
-
-    this.raidService.updateRaid(currentRaidId, { ignoreWeeklyConflicts: desiredValue }).subscribe({
-      next: (updatedRaid) => {
-        this.isUpdatingRaidOptions = false;
-        this.autoComposeMessage = desiredValue
-          ? 'Ce raid ignore maintenant les conflits de compo de la semaine.'
-          : 'Ce raid reapplique maintenant les conflits de compo de la semaine.';
-        if (this.selectedRaid?.id === currentRaidId) {
-          this.selectedRaid = {
-            ...this.selectedRaid,
-            ignoreWeeklyConflicts: updatedRaid.ignoreWeeklyConflicts
-          };
-        }
-        this.loadRaids(currentDayDate, currentRaidId);
-      },
-      error: (error) => {
-        this.isUpdatingRaidOptions = false;
-        this.autoComposeMessage = error?.error?.message
-          || (typeof error?.error === 'string' ? error.error : "Impossible de mettre a jour cette option de raid.");
-        this.autoComposeWarnings = [];
-      }
-    });
-  }
-
   selectDay(day: RaidDayResponse): void {
     this.selectedDay = day;
     this.selectedRaid = day.raids[0] ?? null;
+    this.ignoreWeeklyConflictsForView = false;
     this.syncRenameRaidDraft();
     this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
@@ -333,6 +294,7 @@ export class RaidsPageComponent implements OnInit {
 
   onRaidChange(raid: RaidDTO): void {
     this.selectedRaid = raid;
+    this.ignoreWeeklyConflictsForView = false;
     this.syncRenameRaidDraft();
     this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
@@ -347,6 +309,7 @@ export class RaidsPageComponent implements OnInit {
     }
 
     this.selectedWeekView = weekView;
+    this.ignoreWeeklyConflictsForView = false;
     this.restoreSelection(null, null);
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
@@ -876,7 +839,7 @@ export class RaidsPageComponent implements OnInit {
   }
 
   getUsedCharactersForSelectedDay(): PersonnageDTO[] {
-    if (this.selectedRaid?.ignoreWeeklyConflicts) {
+    if (this.ignoreWeeklyConflictsForView) {
       return [];
     }
 
@@ -1139,6 +1102,7 @@ export class RaidsPageComponent implements OnInit {
     if (this.groupedRaids.length === 0) {
       this.selectedDay = null;
       this.selectedRaid = null;
+      this.ignoreWeeklyConflictsForView = false;
       this.syncRenameRaidDraft();
       this.selectedReferenceRaidId = null;
       return;
@@ -1149,6 +1113,7 @@ export class RaidsPageComponent implements OnInit {
       if (containingDay) {
         this.selectedDay = containingDay;
         this.selectedRaid = containingDay.raids.find((raid) => raid.id === preferredRaidId) ?? containingDay.raids[0] ?? null;
+        this.ignoreWeeklyConflictsForView = false;
         this.syncRenameRaidDraft();
         return;
       }
@@ -1164,6 +1129,7 @@ export class RaidsPageComponent implements OnInit {
       ? selectedDay.raids.find((raid) => raid.id === preferredRaidId)
       : null;
     this.selectedRaid = preferredRaid ?? selectedDay.raids[0] ?? null;
+    this.ignoreWeeklyConflictsForView = false;
     this.syncRenameRaidDraft();
   }
 

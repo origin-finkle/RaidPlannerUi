@@ -73,18 +73,6 @@
         </label>
       </div>
 
-      <div class="auto-compose-config__toggles">
-        <label class="config-toggle">
-          <input type="checkbox" [(ngModel)]="createRaidDraft.ignoreWeeklyConflicts">
-          <span>Ignorer les compos de la semaine pour ce raid ponctuel</span>
-        </label>
-      </div>
-
-      <p class="panel__meta">
-        Si on l'active, tous les personnages du roster et tous les inscrits restent disponibles sur ce raid,
-        meme s'ils sont deja utilises ailleurs dans la semaine.
-      </p>
-
       <div class="panel__actions">
         <button
           type="button"
@@ -230,16 +218,13 @@
           <label class="config-toggle">
             <input
               type="checkbox"
-              [ngModel]="selectedRaid.ignoreWeeklyConflicts"
-              [disabled]="isUpdatingRaidOptions"
-              (ngModelChange)="updateSelectedRaidIgnoreWeeklyConflicts($event)"
+              [(ngModel)]="ignoreWeeklyConflictsForView"
             >
-            <span>Ignorer les compos de la semaine pour ce raid</span>
+            <span>Ignorer les compos de la semaine dans cette vue</span>
           </label>
         </div>
         <p class="panel__meta">
-          Pratique pour un raid ponctuel ou hors rotation: la compo ne bloquera plus les personnages deja utilises
-          sur d'autres raids de la semaine.
+          Option locale et immediate: la compo recharge tous les personnages disponibles sans rien enregistrer sur le raid.
         </p>
         <div class="panel__actions">
           <button type="button" class="action-button action-button--secondary" [disabled]="!canSubmitRenameRaid" (click)="renameSelectedRaid()">
