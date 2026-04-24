@@ -829,17 +829,12 @@ export class RaidsPageComponent implements OnInit {
     }
 
     if (this.selectedDay?.date !== day.date) {
-      if (this.selectedDay && this.selectedRaid) {
-        this.saveCurrentComposition(this.selectedRaid);
-      }
-      this.selectedDay = day;
+      this.selectDay(day);
     }
 
     if (this.selectedRaid?.id !== raid.id) {
-      if (this.selectedRaid && this.selectedRaid.id !== raid.id) {
-        this.saveCurrentComposition(this.selectedRaid);
-      }
-      this.selectedRaid = raid;
+      this.onRaidChange(raid);
+      return;
     }
 
     this.resetAutoComposePreview();
