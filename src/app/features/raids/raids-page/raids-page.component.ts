@@ -321,10 +321,6 @@ export class RaidsPageComponent implements OnInit {
   }
 
   selectDay(day: RaidDayResponse): void {
-    if (this.selectedDay && this.selectedRaid) {
-      this.saveCurrentComposition(this.selectedRaid);
-    }
-
     this.selectedDay = day;
     this.selectedRaid = day.raids[0] ?? null;
     this.syncRenameRaidDraft();
@@ -336,9 +332,6 @@ export class RaidsPageComponent implements OnInit {
   }
 
   onRaidChange(raid: RaidDTO): void {
-    if (this.selectedRaid) {
-      this.saveCurrentComposition(this.selectedRaid);
-    }
     this.selectedRaid = raid;
     this.syncRenameRaidDraft();
     this.syncReferenceRaidSelection();
@@ -351,10 +344,6 @@ export class RaidsPageComponent implements OnInit {
   selectWeekView(weekView: 'current' | 'next'): void {
     if (this.selectedWeekView === weekView) {
       return;
-    }
-
-    if (this.selectedDay && this.selectedRaid) {
-      this.saveCurrentComposition(this.selectedRaid);
     }
 
     this.selectedWeekView = weekView;
@@ -582,29 +571,6 @@ export class RaidsPageComponent implements OnInit {
         )
       };
     }
-  }
-
-  private saveCurrentComposition(raid: RaidDTO): void {
-    const toDTO = (group: PersonnageDTO[]): PersonnageDTO[] =>
-      group.map(p => ({
-        id: p.id,
-        nom: p.nom,
-        classe: p.classe,
-        specialisation: p.specialisation,
-        role: p.role,
-        pseudo: p.pseudo ?? 'inconnu',
-        main: p.main
-      }));
-
-    const payload: RaidCompositionDTO = {
-      raidId: raid.id,
-      group1: toDTO(raid.group1 ?? []),
-      group2: toDTO(raid.group2 ?? [])
-    };
-
-    this.raidService.saveComposition(payload).subscribe(() => {
-      console.log(`Composition du raid ${raid.id} sauvegardee.`);
-    });
   }
 
   get totalRaidCount(): number {
