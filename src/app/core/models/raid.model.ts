@@ -14,6 +14,7 @@ export interface RaidDTO {
   compositionStatus: 'DRAFT' | 'READY' | 'PUBLISHED' | string;
   compositionLocked: boolean;
   lastPublishedAt: string | null;
+  ignoreWeeklyConflicts: boolean;
 }
 
 export interface JoueurDTO {
@@ -52,10 +53,12 @@ export interface CreateRaidRequestDTO {
   nom: string;
   date: string;
   channelId: string;
+  ignoreWeeklyConflicts: boolean;
 }
 
 export interface UpdateRaidRequestDTO {
   nom?: string;
+  ignoreWeeklyConflicts?: boolean;
 }
 
 export interface AutoComposeWeekResultDTO {

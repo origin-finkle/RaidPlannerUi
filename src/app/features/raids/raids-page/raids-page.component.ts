@@ -76,6 +76,7 @@ export class RaidsPageComponent implements OnInit {
   isCreatingRaid = false;
   isDeletingRaid = false;
   isRenamingRaid = false;
+  isUpdatingRaidOptions = false;
   autoComposeConfig: AutoComposeWeekRequestDTO = {
     maxRaids: 2,
     targetTanks: 2,
@@ -189,7 +190,8 @@ export class RaidsPageComponent implements OnInit {
     this.raidService.createManualRaid({
       nom: this.createRaidDraft.nom.trim(),
       date: this.createRaidDraft.date,
-      channelId: this.createRaidDraft.channelId.trim()
+      channelId: this.createRaidDraft.channelId.trim(),
+      ignoreWeeklyConflicts: !!this.createRaidDraft.ignoreWeeklyConflicts
     }).pipe(
       switchMap((createdRaid) =>
         this.raidService.publishCustomSignupFlowToRaidChannel(createdRaid.id, createdRaid.channelId).pipe(
@@ -273,6 +275,46 @@ export class RaidsPageComponent implements OnInit {
         this.isRenamingRaid = false;
         this.autoComposeMessage = error?.error?.message
           || (typeof error?.error === 'string' ? error.error : "Impossible de renommer ce raid.");
+        this.autoComposeWarnings = [];
+      }
+    });
+  }
+
+  updateSelectedRaidIgnoreWeeklyConflicts(ignoreWeeklyConflicts: boolean): void {
+    if (!this.selectedRaid || this.isUpdatingRaidOptions) {
+      return;
+    }
+
+    const currentRaidId = this.selectedRaid.id;
+    const currentDayDate = this.selectedDay?.date ?? null;
+    const desiredValue = !!ignoreWeeklyConflicts;
+
+    if (this.selectedRaid.ignoreWeeklyConflicts === desiredValue) {
+      return;
+    }
+
+    this.isUpdatingRaidOptions = true;
+    this.autoComposeMessage = null;
+    this.autoComposeWarnings = [];
+
+    this.raidService.updateRaid(currentRaidId, { ignoreWeeklyConflicts: desiredValue }).subscribe({
+      next: (updatedRaid) => {
+        this.isUpdatingRaidOptions = false;
+        this.autoComposeMessage = desiredValue
+          ? 'Ce raid ignore maintenant les conflits de compo de la semaine.'
+          : 'Ce raid reapplique maintenant les conflits de compo de la semaine.';
+        if (this.selectedRaid?.id === currentRaidId) {
+          this.selectedRaid = {
+            ...this.selectedRaid,
+            ignoreWeeklyConflicts: updatedRaid.ignoreWeeklyConflicts
+          };
+        }
+        this.loadRaids(currentDayDate, currentRaidId);
+      },
+      error: (error) => {
+        this.isUpdatingRaidOptions = false;
+        this.autoComposeMessage = error?.error?.message
+          || (typeof error?.error === 'string' ? error.error : "Impossible de mettre a jour cette option de raid.");
         this.autoComposeWarnings = [];
       }
     });
@@ -873,6 +915,10 @@ export class RaidsPageComponent implements OnInit {
   }
 
   getUsedCharactersForSelectedDay(): PersonnageDTO[] {
+    if (this.selectedRaid?.ignoreWeeklyConflicts) {
+      return [];
+    }
+
     const date = this.selectedDay?.date;
     return date ? this.getUsedCharactersForResetWeek(date) : [];
   }
@@ -1473,7 +1519,8 @@ export class RaidsPageComponent implements OnInit {
         selectedDate,
         matchingTemplate?.heure ?? this.selectedRaid?.heure?.slice(11, 16) ?? '20:45'
       ),
-      channelId: matchingTemplate?.channelId ?? this.discordChannelOptions[0]?.id ?? ''
+      channelId: matchingTemplate?.channelId ?? this.discordChannelOptions[0]?.id ?? '',
+      ignoreWeeklyConflicts: false
     };
   }
 
