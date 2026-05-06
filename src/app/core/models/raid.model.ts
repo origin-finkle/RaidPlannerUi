@@ -114,6 +114,8 @@ export interface MissingRaidPingDTO {
 export interface BuffProvider  {
   classe: string;
   specialisations?: string[];
+  hunterFallbackLabel?: string;
+  hunterFallbackType?: 'pet' | 'ability';
 }
 
 export interface RaidSignupDiagnosticDTO {

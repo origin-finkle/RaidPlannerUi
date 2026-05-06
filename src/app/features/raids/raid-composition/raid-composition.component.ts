@@ -62,17 +62,17 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   private readonly raidBuffDefinitions: BuffDefinitions = {
     "Puissance d'attaque": [
       { classe: 'DK' },
-      { classe: 'Chasseur' },
+      { classe: 'Chasseur', hunterFallbackLabel: 'Trueshot Aura', hunterFallbackType: 'ability' },
       { classe: 'Guerrier' }
     ],
     'Chance de critique': [
       { classe: 'Druide', specialisations: ['Feral', 'Gardien'] },
       { classe: 'Mage' },
       { classe: 'Moine', specialisations: ['Marche vent'] },
-      { classe: 'Chasseur' }
+      { classe: 'Chasseur', hunterFallbackLabel: 'Loup', hunterFallbackType: 'pet' }
     ],
     'Maitrise': [
-      { classe: 'Chasseur' },
+      { classe: 'Chasseur', hunterFallbackLabel: 'Chat', hunterFallbackType: 'pet' },
       { classe: 'Paladin' },
       { classe: 'Chaman' }
     ],
@@ -80,31 +80,31 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
       { classe: 'DK', specialisations: ['Givre', 'Impie'] },
       { classe: 'Voleur' },
       { classe: 'Chaman', specialisations: ['Amelioration'] },
-      { classe: 'Chasseur' }
+      { classe: 'Chasseur', hunterFallbackLabel: 'Hyene / Serpent', hunterFallbackType: 'pet' }
     ],
     'Hate des sorts': [
       { classe: 'Druide', specialisations: ['Equilibre'] },
       { classe: 'Pretre', specialisations: ['Ombre'] },
       { classe: 'Chaman' },
-      { classe: 'Chasseur' }
+      { classe: 'Chasseur', hunterFallbackLabel: 'Sporebat', hunterFallbackType: 'pet' }
     ],
     'Puissance des sorts': [
       { classe: 'Mage' },
       { classe: 'Chaman' },
       { classe: 'Demoniste' },
-      { classe: 'Chasseur' }
+      { classe: 'Chasseur', hunterFallbackLabel: "Marcheur de l'eau / Core Hound", hunterFallbackType: 'pet' }
     ],
     'Endurance': [
       { classe: 'Pretre' },
       { classe: 'Demoniste' },
       { classe: 'Guerrier' },
-      { classe: 'Chasseur', specialisations: ['BM'] }
+      { classe: 'Chasseur', specialisations: ['BM'], hunterFallbackLabel: 'Silithide', hunterFallbackType: 'pet' }
     ],
     'Stats': [
       { classe: 'Druide' },
       { classe: 'Moine' },
       { classe: 'Paladin' },
-      { classe: 'Chasseur', specialisations: ['BM'] }
+      { classe: 'Chasseur', specialisations: ['BM'], hunterFallbackLabel: 'Shale Spider', hunterFallbackType: 'pet' }
     ]
   };
 
@@ -743,7 +743,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
 
       hunterAssignments.add(availableHunter.nom);
       counts[buff] = 1;
-      activeProviders[buff] = [this.formatCharacterProviderLabel(availableHunter) + ' · Pet manquant'];
+      activeProviders[buff] = [this.formatHunterFallbackProviderLabel(availableHunter, providers)];
     }
 
     return { counts, activeProviders, possibleProviders };
@@ -759,9 +759,28 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     return `${character.nom} - ${classe}${spec ? ` ${spec}` : ''}`;
   }
 
+  private formatHunterFallbackProviderLabel(character: PersonnageDTO, providers: BuffProvider[]): string {
+    const characterLabel = this.formatCharacterProviderLabel(character);
+    const hunterProvider = providers.find((provider) => this.isHunterFallbackProvider(provider));
+
+    if (!hunterProvider?.hunterFallbackLabel) {
+      return `${characterLabel} - Pet manquant`;
+    }
+
+    const prefix = hunterProvider.hunterFallbackType === 'ability' ? 'Capacite' : 'Pet conseille';
+    return `${characterLabel} - ${prefix}: ${hunterProvider.hunterFallbackLabel}`;
+  }
+
   private getPossibleProviderLabels(providers: BuffProvider[]): string[] {
     return providers.map((provider) => {
       const classe = this.formatDisplayName(provider.classe);
+
+      if (this.isHunterFallbackProvider(provider) && provider.hunterFallbackLabel) {
+        const suffix = provider.hunterFallbackType === 'ability'
+          ? provider.hunterFallbackLabel
+          : `pet: ${provider.hunterFallbackLabel}`;
+        return `${classe} (${suffix})`;
+      }
 
       if (!provider.specialisations || provider.specialisations.length === 0) {
         return classe;
