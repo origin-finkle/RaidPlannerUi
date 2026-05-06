@@ -359,7 +359,8 @@
   left: 50%;
   bottom: calc(100% + 0.55rem);
   min-width: 180px;
-  max-width: 260px;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 2rem));
   padding: 0.7rem 0.8rem;
   border-radius: 0.85rem;
   border: 1px solid rgba(120, 148, 255, 0.28);
@@ -369,7 +370,9 @@
   font-size: 0.86rem;
   font-weight: 700;
   line-height: 1.45;
-  white-space: pre-line;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   text-align: left;
   opacity: 0;
   pointer-events: none;
@@ -451,7 +454,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.55rem;
-  overflow: hidden;
+  overflow: visible;
   text-align: center;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
