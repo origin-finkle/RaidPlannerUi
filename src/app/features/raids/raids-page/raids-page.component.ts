@@ -283,7 +283,7 @@ export class RaidsPageComponent implements OnInit {
   selectDay(day: RaidDayResponse): void {
     this.selectedDay = day;
     this.selectedRaid = day.raids[0] ?? null;
-    this.ignoreWeeklyConflictsForView = false;
+    this.syncIgnoreWeeklyConflictsForView();
     this.syncRenameRaidDraft();
     this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
@@ -294,7 +294,7 @@ export class RaidsPageComponent implements OnInit {
 
   onRaidChange(raid: RaidDTO): void {
     this.selectedRaid = raid;
-    this.ignoreWeeklyConflictsForView = false;
+    this.syncIgnoreWeeklyConflictsForView();
     this.syncRenameRaidDraft();
     this.syncReferenceRaidSelection();
     this.resetAutoComposePreview();
@@ -309,7 +309,6 @@ export class RaidsPageComponent implements OnInit {
     }
 
     this.selectedWeekView = weekView;
-    this.ignoreWeeklyConflictsForView = false;
     this.restoreSelection(null, null);
     this.resetAutoComposePreview();
     this.loadSelectedRaidInsights();
@@ -456,6 +455,30 @@ export class RaidsPageComponent implements OnInit {
       error: () => {
         this.autoComposeMessage = "Impossible de retirer cet ajout manuel.";
         this.autoComposeWarnings = [];
+      }
+    });
+  }
+
+  onIgnoreWeeklyConflictsToggle(enabled: boolean): void {
+    this.ignoreWeeklyConflictsForView = enabled;
+
+    if (!this.selectedRaid || this.selectedRaid.ignoreWeeklyConflicts === enabled) {
+      return;
+    }
+
+    const raidId = this.selectedRaid.id;
+    this.selectedRaid.ignoreWeeklyConflicts = enabled;
+    this.patchRaidInCurrentState(raidId, { ignoreWeeklyConflicts: enabled });
+
+    this.raidService.updateRaid(raidId, { ignoreWeeklyConflicts: enabled }).subscribe({
+      next: (updatedRaid) => {
+        this.patchRaidInCurrentState(raidId, { ignoreWeeklyConflicts: updatedRaid.ignoreWeeklyConflicts });
+        this.syncIgnoreWeeklyConflictsForView();
+      },
+      error: () => {
+        this.patchRaidInCurrentState(raidId, { ignoreWeeklyConflicts: !enabled });
+        this.syncIgnoreWeeklyConflictsForView();
+        this.autoComposeMessage = "Impossible d'enregistrer l'option de semaine speciale.";
       }
     });
   }
@@ -1054,7 +1077,7 @@ export class RaidsPageComponent implements OnInit {
       if (containingDay) {
         this.selectedDay = containingDay;
         this.selectedRaid = containingDay.raids.find((raid) => raid.id === preferredRaidId) ?? containingDay.raids[0] ?? null;
-        this.ignoreWeeklyConflictsForView = false;
+        this.syncIgnoreWeeklyConflictsForView();
         this.syncRenameRaidDraft();
         return;
       }
@@ -1070,8 +1093,30 @@ export class RaidsPageComponent implements OnInit {
       ? selectedDay.raids.find((raid) => raid.id === preferredRaidId)
       : null;
     this.selectedRaid = preferredRaid ?? selectedDay.raids[0] ?? null;
-    this.ignoreWeeklyConflictsForView = false;
+    this.syncIgnoreWeeklyConflictsForView();
     this.syncRenameRaidDraft();
+  }
+
+  private syncIgnoreWeeklyConflictsForView(): void {
+    this.ignoreWeeklyConflictsForView = !!this.selectedRaid?.ignoreWeeklyConflicts;
+  }
+
+  private patchRaidInCurrentState(raidId: number, patch: Partial<RaidDTO>): void {
+    this.allGroupedRaids = this.allGroupedRaids.map((day) => ({
+      ...day,
+      raids: day.raids.map((raid) => raid.id === raidId ? { ...raid, ...patch } : raid)
+    }));
+
+    if (this.selectedDay) {
+      this.selectedDay = {
+        ...this.selectedDay,
+        raids: this.selectedDay.raids.map((raid) => raid.id === raidId ? { ...raid, ...patch } : raid)
+      };
+    }
+
+    if (this.selectedRaid?.id === raidId) {
+      this.selectedRaid = { ...this.selectedRaid, ...patch };
+    }
   }
 
   private syncRenameRaidDraft(): void {

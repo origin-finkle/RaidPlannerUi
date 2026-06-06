@@ -40,6 +40,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   @Input() group2FromRaid: PersonnageDTO[] = [];
   @Input() raidId!: number;
   @Input() usedCharacters: PersonnageDTO[] = [];
+  @Input() ignoreWeeklyConflicts = false;
   @Input() compositionLocked = false;
   @Input() publishLabel = 'Publier sur Discord';
   @Input() publishHint = 'Publie la compo actuelle dans le salon du raid.';
@@ -240,6 +241,7 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
       || changes['joueurs']
       || changes['allJoueurs']
       || changes['usedCharacters']
+      || changes['ignoreWeeklyConflicts']
       || changes['compositionLocked']
     ) {
       this.group1 = [...(this.group1FromRaid || [])];
@@ -360,11 +362,13 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
     );
 
     const resetDate = this.getLastRaidResetDate();
-    const lockedCharacters = new Set(
-      this.usedCharacters
-        .filter((personnage) => personnage.usedAt && new Date(personnage.usedAt) >= resetDate)
-        .map((personnage) => personnage.nom)
-    );
+    const lockedCharacters = this.ignoreWeeklyConflicts
+      ? new Set<string>()
+      : new Set(
+          this.usedCharacters
+            .filter((personnage) => personnage.usedAt && new Date(personnage.usedAt) >= resetDate)
+            .map((personnage) => personnage.nom)
+        );
 
     this.available = allCharacters.filter((personnage) => {
       const joueur = this.findJoueurByPersonnage(personnage.nom);

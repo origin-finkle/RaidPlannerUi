@@ -219,12 +219,13 @@
             <input
               type="checkbox"
               [(ngModel)]="ignoreWeeklyConflictsForView"
+              (ngModelChange)="onIgnoreWeeklyConflictsToggle($event)"
             >
-            <span>Ignorer les compos de la semaine dans cette vue</span>
+            <span>Semaine speciale: autoriser les personnages deja joues</span>
           </label>
         </div>
         <p class="panel__meta">
-          Option locale et immediate: la compo recharge tous les personnages disponibles sans rien enregistrer sur le raid.
+          Option enregistree sur ce raid: la compo garde tous les inscrits disponibles meme s'ils sont deja places ailleurs cette semaine.
         </p>
         <div class="panel__actions">
           <button type="button" class="action-button action-button--secondary" [disabled]="!canSubmitRenameRaid" (click)="renameSelectedRaid()">
@@ -257,6 +258,7 @@
           [group1FromRaid]="selectedRaid.group1 || []"
           [group2FromRaid]="selectedRaid.group2 || []"
           [usedCharacters]="getUsedCharactersForSelectedDay()"
+          [ignoreWeeklyConflicts]="ignoreWeeklyConflictsForView"
           [compositionLocked]="selectedRaid.compositionLocked"
           [publishLabel]="publishActionLabel"
           [publishHint]="publishActionHint"
