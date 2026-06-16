@@ -235,17 +235,24 @@ export class RaidCompositionComponent implements OnChanges, AfterViewInit, OnIni
   private utilityCoverageSummary: CoverageSummary = { counts: {}, activeProviders: {}, possibleProviders: {} };
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (
-      changes['group1FromRaid']
-      || changes['group2FromRaid']
+    const shouldSyncGroupsFromRaid =
+      changes['raidId']
+      || changes['group1FromRaid']
+      || changes['group2FromRaid'];
+
+    const shouldRefreshAvailable =
+      shouldSyncGroupsFromRaid
       || changes['joueurs']
       || changes['allJoueurs']
       || changes['usedCharacters']
       || changes['ignoreWeeklyConflicts']
-      || changes['compositionLocked']
-    ) {
-      this.group1 = [...(this.group1FromRaid || [])];
-      this.group2 = [...(this.group2FromRaid || [])];
+      || changes['compositionLocked'];
+
+    if (shouldRefreshAvailable) {
+      if (shouldSyncGroupsFromRaid) {
+        this.group1 = [...(this.group1FromRaid || [])];
+        this.group2 = [...(this.group2FromRaid || [])];
+      }
 
       this.refreshCoverageSummaries();
       this.computeAvailable();
