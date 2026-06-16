@@ -384,7 +384,10 @@ export class RaidsPageComponent implements OnInit {
   }
 
   onCompositionChanged(event: { raidId: number; group1: PersonnageDTO[]; group2: PersonnageDTO[] }) {
-    const raid = this.selectedDay?.raids.find(r => r.id === event.raidId);
+    const raid = this.selectedRaid?.id === event.raidId
+      ? this.selectedRaid
+      : this.selectedDay?.raids.find(r => r.id === event.raidId);
+
     if (raid) {
       const enrich = (p: PersonnageDTO): PersonnageDTO => {
         const joueur = raid.joueurDTOList.find(j =>
@@ -395,17 +398,22 @@ export class RaidsPageComponent implements OnInit {
         return found ? { ...p, specialisation: found.specialisation } : p;
       };
 
-      raid.group1 = event.group1.map(enrich);
-      raid.group2 = event.group2.map(enrich);
-        this.raidService.saveComposition({
+      const nextGroup1 = event.group1.map(enrich);
+      const nextGroup2 = event.group2.map(enrich);
+      const nextStatus = raid.compositionStatus === 'PUBLISHED' ? 'READY' : raid.compositionStatus;
+
+      this.patchRaidInCurrentState(event.raidId, {
+        group1: nextGroup1,
+        group2: nextGroup2,
+        compositionStatus: nextStatus
+      });
+
+      this.raidService.saveComposition({
         raidId: raid.id,
-        group1: raid.group1,
-        group2: raid.group2
+        group1: nextGroup1,
+        group2: nextGroup2
         }).subscribe({
           next: () => {
-            if (raid.compositionStatus === 'PUBLISHED') {
-              raid.compositionStatus = 'READY';
-            }
             this.loadSelectedRaidInsights();
         },
         error: () => {
